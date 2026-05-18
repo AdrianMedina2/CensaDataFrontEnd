@@ -1,0 +1,15 @@
+/* Orden estructural */
+html,
+body {
+    height: 100%;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    font-family: 'Poppins', sans-serif; /* Fuente global */
+}
+
+main {
+    flex: 1;
+}
