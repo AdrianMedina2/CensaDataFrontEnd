@@ -1,9 +1,8 @@
 import React from "react";
-import "./Login.css";
 import { useEffect } from "react";
+import "./RecuperarContraseña.css";
 import TiltCard from "../../components/TiltCard/TiltCard.jsx";
-
-function Login() {
+function RecuperarContraseña() {
     useEffect(() => {
         const forms = document.querySelectorAll(".needs-validation");
         Array.from(forms).forEach(form => {
@@ -35,16 +34,41 @@ function Login() {
                     <TiltCard className="w-50">
                         <div className="tilt-card-inner bg-white rounded-5 shadow p-4 py-5 fade-in fast">
                             <form className="needs-validation" noValidate>
-                                <h2 className="text-center fw-bold mb-4 fs-4">Iniciar sesión</h2>
+                                <h2 className="text-center fw-bold mb-4 fs-4">Recuperar contraseña</h2>
+
                                 <div className="mb-3">
                                     <input
-                                        type="text"
+                                        type="email"
                                         className="form-control"
-                                        placeholder="Ingrese su usuario"
+                                        placeholder="Ingrese su correo"
                                         required
                                     />
                                     <div className="invalid-feedback">
-                                        Debe rellenar este campo.
+                                        Debe ingresar un correo válido.
+                                    </div>
+                                </div>
+
+                                <div className="mb-3 d-flex">
+                                    <input
+                                        type="text"
+                                        className="form-control me-2"
+                                        placeholder="Ingresar código"
+                                        required
+                                    />
+                                    <button type="button" className="btn btn-brand fs-6">
+                                        Enviar código
+                                    </button>
+                                </div>
+
+                                <div className="mb-3">
+                                    <input
+                                        type="password"
+                                        className="form-control"
+                                        placeholder="Nueva contraseña"
+                                        required
+                                    />
+                                    <div className="invalid-feedback">
+                                        Debe ingresar una nueva contraseña.
                                     </div>
                                 </div>
 
@@ -52,30 +76,20 @@ function Login() {
                                     <input
                                         type="password"
                                         className="form-control"
-                                        placeholder="Ingrese su contraseña"
+                                        placeholder="Confirmar contraseña"
                                         required
                                     />
                                     <div className="invalid-feedback">
-                                        Ingrese su contraseña para continuar.
+                                        Debe confirmar la contraseña.
                                     </div>
                                 </div>
 
-                                <div className="mb-3">
-                                    <select className="form-select" required>
-                                        <option value="">Seleccione su rol</option>
-                                        <option value="admin">Administrador</option>
-                                        <option value="user">Usuario</option>
-                                    </select>
-                                    <div className="invalid-feedback">
-                                        Debe elegir un rol.
-                                    </div>
-                                </div>
                                 <button type="submit" className="btn btn-brand w-100">
                                     Acceder
                                 </button>
                             </form>
                             <div className="mt-3 text-center">
-                                <a href="/recuperar">¿Olvidó su contraseña?</a>
+                                <a href="/">Volver al inicio de sesión</a>
                             </div>
                         </div>
                     </TiltCard>
@@ -85,4 +99,4 @@ function Login() {
     );
 }
 
-export default Login;
+export default RecuperarContraseña;

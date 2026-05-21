@@ -8,7 +8,8 @@
 .btn-brand:hover {
     background-color: var(--color-brand-hover);
     transform: translateY(-3px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    color: #fff;
 }
 
 /* Botón de marca blanco */
@@ -22,7 +23,7 @@
     background-color: #d4d3d3;
     color: var(--color-brand);
     transform: translateY(-3px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* animación de elevación suave para botones y elementos interactivos */
@@ -31,35 +32,40 @@
 }
 
 .hover-lift:hover {
-    transform: translateY(-8px); 
-    box-shadow: 0 1rem 1.5rem rgba(0,0,0,.15); 
-    cursor: pointer; 
+    transform: translateY(-8px);
+    box-shadow: 0 1rem 1.5rem rgba(0, 0, 0, .15);
+    cursor: pointer;
 }
 
-/* animaciones de fade-in para elementos al aparecer en pantalla */ 
+/* Animaciones */
 .fade-in {
     opacity: 0;
-    transform: translateY(20px);
     animation: fadeInUp 0.8s ease forwards;
 }
 
 @keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+        /* solo durante la animación */
+    }
+
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
+
+
 /* Variantes */
-.fade-in-fast {
-    animation: fadeInUp 0.5s ease forwards;
+.fade-in.fast {
+    animation-duration: 0.5s;
 }
 
-.fade-in-slow {
-    animation: fadeInUp 1.5s ease forwards;
+.fade-in.slow {
+    animation-duration: 1.5s;
 }
 
-.fade-in-delayed {
-    animation: fadeInUp 0.8s ease forwards;
+.fade-in.delayed {
     animation-delay: 0.3s;
 }
-

@@ -1,0 +1,33 @@
+.tilt-wrapper {
+    position: relative;
+    display: block;
+    perspective: 1400px;
+    flex: 0 0 auto;
+    overflow: visible;
+}
+
+.tilt-card-inner {
+    width: 100%;
+    box-sizing: border-box;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+    will-change: transform;
+}
+
+/* accesibilidad mínima */
+@media (prefers-reduced-motion: reduce) {
+    .tilt-card-inner {
+        transition: none !important;
+        will-change: auto !important;
+    }
+}
+/* evitar encoger en contenedores flexibles */
+.tilt-wrapper.force-no-shrink {
+    min-width: 0;
+    max-width: 100%;
+}
+/* Para permitir que el componente se comporte como un elemento en línea */
+.tilt-wrapper.inline {
+    display: inline-block;
+}
+

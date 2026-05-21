@@ -1,0 +1,5 @@
+.hover-follow {
+    display: inline-block;
+    transition: transform 0.2s ease;
+    will-change: transform;
+}
