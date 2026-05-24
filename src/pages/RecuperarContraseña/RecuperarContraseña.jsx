@@ -17,7 +17,7 @@ function RecuperarContraseña() {
     }, []);
 
     return (
-        <main className="container-fluid vh-100">
+        <main className="container-fluid vh-100 recuperar-contraseña-page">
             <div className="row h-100">
                 {/* Panel izquierdo */}
                 <section className="col-md-6 d-flex flex-column align-items-center justify-content-center bg-white">

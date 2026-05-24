@@ -13,3 +13,11 @@ body {
 main {
     flex: 1;
 }
+
+/* Evitar que se muestre el check verde en inputs válidos */
+.was-validated .form-control:valid,
+.was-validated .form-select:valid {
+    border-color: inherit !important;
+    background-image: none !important;
+    box-shadow: none !important;
+}

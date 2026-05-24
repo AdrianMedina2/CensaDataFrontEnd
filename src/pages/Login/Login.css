@@ -1,3 +1,9 @@
-.bg-brand {
-    background-color: var(--color-brand);
+/* Login.css
+    Archivo reservado para estilos específicos de la página Login.
+    Añadir reglas aquí cuando haga falta.
+*/
+
+/* Placeholder mínimo para evitar warnings de archivos vacíos */
+.login-page {
+    min-height: 100vh;
 }
