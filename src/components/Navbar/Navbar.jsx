@@ -1,10 +1,9 @@
-// src/components/NavbarMinimal/NavbarMinimal.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getProfile, logout } from "../../services/api";
-import "./NavbarMinimal.css";
+import { getProfile, logoutRequest } from "../../services/api";
+import "./Navbar.css";
 
-export default function NavbarMinimal() {
+export default function Navbar() {
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
 
@@ -18,9 +17,21 @@ export default function NavbarMinimal() {
     }, []);
 
     const handleLogout = async () => {
-        await logout();
-        navigate("/login");
+        try {
+            // Espera a que el contexto haga la limpieza o al backend si aplica
+            await authContext.logout();
+        } catch (err) {
+            console.error("Logout failed:", err);
+            // Aun así se fuerza limpieza local
+            sessionStorage.removeItem("mock_refresh_cookie");
+            sessionStorage.removeItem("mock_role");
+            localStorage.removeItem("role");
+        } finally {
+            // Navegación SPA que reemplaza la entrada actual del historial
+            navigate("/login", { replace: true });
+        }
     };
+
 
     const displayName = user?.name || "Usuario";
 
@@ -39,7 +50,7 @@ export default function NavbarMinimal() {
                 </button>
 
                 {/* Logo */}
-                <a className="navbar-brand ms-2" href="/">MiApp</a>
+                <a className="navbar-brand fs-4 ms-2" href="/home">CensaData</a>
 
                 {/* Dropdown usuario */}
                 <div className="dropdown ms-auto">

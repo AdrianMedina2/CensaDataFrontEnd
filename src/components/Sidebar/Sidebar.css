@@ -1,0 +1,40 @@
+.sidebar {
+    width: 220px;
+    min-height: calc(100vh - 60px);
+    /* ocupa toda la altura debajo de la navbar */
+}
+
+.sidebar .nav-link {
+    padding: .6rem 1rem;
+    transition: background-color .15s ease, transform .15s ease;
+}
+
+.sidebar .nav-link:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: .25rem;
+    transform: translateX(4px);
+}
+
+@media (min-width: 768px) {
+    .sidebar {
+        position: fixed;
+        top: 60px;
+        /* ajusta si tu navbar tiene otro alto */
+        left: 0;
+        height: calc(100vh - 60px);
+        overflow-y: auto;
+        z-index: 1030;
+        /* por debajo del offcanvas de Bootstrap */
+    }
+
+    /* si usas border-end y ves la línea, hazla transparente */
+    .sidebar.border-end {
+        border-right: 1px solid transparent;
+    }
+}
+
+/* footer: quitar borde superior si existe */
+.footer {
+    border-top: none;
+    z-index: 1020;
+}
