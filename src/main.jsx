@@ -5,13 +5,31 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import 'bootstrap/dist/css/bootstrap.min.css'
 import "./styles/variables.css";
 import "./styles/globals.css";
-import "./styles/animations.css";
+import "./styles/animations.css"; import { BrowserRouter } from "react-router-dom";
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
+// --- MSW ACTIVADO SOLO EN DESARROLLO ---
+async function enableMocking() {
+  if (import.meta.env.DEV) {
+    const { worker } = await import("./mocks/browser");
+    await worker.start({
+      serviceWorker: {
+        url: "/mockServiceWorker.js",
+      },
+      onUnhandledRequest: "bypass",
+    });
+  }
+}
+
+async function main() {
+  await enableMocking();
+
+  createRoot(document.getElementById('root')).render(
     <AuthProvider>
-      <App />
-    </AuthProvider>
-  </StrictMode>,
-)
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </AuthProvider>,
+  );
+}
 
+main();

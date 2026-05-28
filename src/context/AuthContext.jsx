@@ -1,79 +1,96 @@
 import React, { createContext, useState, useCallback, useMemo, useEffect } from "react";
-import { refreshWithCookie, logoutRequest } from "../services/api";
+import { loginRequest, refreshRequest, logoutRequest } from "../services/api";
 
 export const AuthContext = createContext({
-    token: null,
+    accessToken: null,
+    refreshToken: null,
     role: null,
     isAuthenticated: false,
     initializing: true,
     login: () => { },
     logout: () => { },
-    setToken: () => { }
+    setTokens: () => { }
 });
 
 export function AuthProvider({ children }) {
-    const [token, setToken] = useState(null);
-    const [role, setRole] = useState(null);
+    const [accessToken, setAccessToken] = useState(() => localStorage.getItem("accessToken"));
+    const [refreshToken, setRefreshToken] = useState(() => localStorage.getItem("refreshToken"));
+    const [role, setRole] = useState(() => localStorage.getItem("role"));
     const [initializing, setInitializing] = useState(true);
 
-    const login = useCallback((accessToken, userRole) => {
-        setToken(accessToken);
+    const setTokens = useCallback((access, refresh, userRole) => {
+        setAccessToken(access);
+        setRefreshToken(refresh);
         setRole(userRole);
-        if (userRole) localStorage.setItem("role", userRole); // solo para mock/UI
+
+        if (access) localStorage.setItem("accessToken", access);
+        else localStorage.removeItem("accessToken");
+
+        if (refresh) localStorage.setItem("refreshToken", refresh);
+        else localStorage.removeItem("refreshToken");
+
+        if (userRole) localStorage.setItem("role", userRole);
+        else localStorage.removeItem("role");
     }, []);
+
+    const login = useCallback(async ({ usuario, password, role }) => {
+        const data = await loginRequest({ usuario, password, role });
+        setTokens(data.access_token, data.refresh_token, data.role);
+    }, [setTokens]);
 
     const logout = useCallback(async () => {
         try {
-            await logoutRequest(token).catch(() => { });
-        } finally {
-            setToken(null);
-            setRole(null);
-            // limpieza local relacionada con auth
-            try {
-                localStorage.removeItem("role");
-                sessionStorage.removeItem("mock_refresh_cookie");
-                sessionStorage.removeItem("mock_role");
-                sessionStorage.removeItem("refresh_token");
-            } catch (e) { /* ignore */ }
-        }
-    }, [token]);
+            if (refreshToken) {
+                await logoutRequest(refreshToken);
+            }
+        } catch (_) { }
+        setTokens(null, null, null);
+    }, [refreshToken, setTokens]);
 
     useEffect(() => {
         let mounted = true;
+        let alreadyRefreshed = false; // evita doble ejecución en Strict Mode
+
         (async () => {
+            if (!refreshToken || refreshToken === "null") {
+                setInitializing(false);
+                return;
+            }
+
+            if (alreadyRefreshed) {
+                setInitializing(false);
+                return;
+            }
+
+            alreadyRefreshed = true;
+
             try {
-                if (!token) {
-                    const data = await refreshWithCookie().catch(() => null);
-                    if (mounted && data && data.access_token) {
-                        setToken(data.access_token);
-                        if (data.role) setRole(data.role);
-                    }
+                const data = await refreshRequest({ refresh_token: refreshToken });
+
+                if (mounted && data?.access_token) {
+                    setTokens(data.access_token, data.refresh_token, data.role || role);
                 }
-            } catch (e) {
+            } catch (_) {
+                setTokens(null, null, null);
             } finally {
                 if (mounted) setInitializing(false);
             }
         })();
-        return () => { mounted = false; };
+
+        return () => { mounted = false };
     }, []);
 
+
     const value = useMemo(() => ({
-        token,
+        accessToken,
+        refreshToken,
         role,
-        isAuthenticated: !!token,
+        isAuthenticated: !!accessToken,
         initializing,
         login,
         logout,
-        setToken
-    }), [token, role, initializing, login, logout]);
-
-    if (typeof window !== "undefined") {
-        window.__APP_AUTH__ = window.__APP_AUTH__ || {};
-        window.__APP_AUTH__.getToken = () => token;
-        window.__APP_AUTH__.setToken = (t) => setToken(t);
-        window.__APP_AUTH__.logout = logout;
-        window.__APP_AUTH__.login = (t, r) => login(t, r);
-    }
+        setTokens
+    }), [accessToken, refreshToken, role, initializing, login, logout, setTokens]);
 
     return (
         <AuthContext.Provider value={value}>

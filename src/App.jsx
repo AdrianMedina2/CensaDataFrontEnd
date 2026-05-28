@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Login from "./pages/Login/Login.jsx";
 import Recuperar from "./pages/RecuperarContraseña/RecuperarContraseña.jsx";
 import Home from "./pages/Home/Home.jsx";
@@ -11,27 +11,24 @@ import { AuthContext } from "./context/AuthContext";
 function App() {
     const { initializing } = useContext(AuthContext);
 
-    // mientras intenta refresh on load, muestra un spinner o mensaje
     if (initializing) return <div>Comprobando sesión...</div>;
 
     return (
-        <Router>
-            <Routes>
-                {/* Rutas públicas */}
-                <Route path="/login" element={<AuthLayout><Login /></AuthLayout>} />
-                <Route path="/recuperar" element={<AuthLayout><Recuperar /></AuthLayout>} />
+        <Routes>
+            {/* Rutas públicas */}
+            <Route path="/login" element={<AuthLayout><Login /></AuthLayout>} />
+            <Route path="/recuperar" element={<AuthLayout><Recuperar /></AuthLayout>} />
 
-                {/* Rutas privadas */}
-                <Route
-                    path="/home"
-                    element={
-                        <RequireAuth>
-                            <MainLayout><Home /></MainLayout>
-                        </RequireAuth>
-                    }
-                />
-            </Routes>
-        </Router>
+            {/* Rutas privadas */}
+            <Route
+                path="/home"
+                element={
+                    <RequireAuth>
+                        <MainLayout><Home /></MainLayout>
+                    </RequireAuth>
+                }
+            />
+        </Routes>
     );
 }
 

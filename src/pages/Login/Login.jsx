@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { login as apiLogin } from "../../services/api";
+import { loginRequest as apiLogin } from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
 import "./Login.css";
 
@@ -10,57 +10,36 @@ function Login() {
     const [role, setRole] = useState("");
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
+
     const navigate = useNavigate();
     const authContext = useContext(AuthContext);
 
-    useEffect(() => {
-        const forms = Array.from(document.querySelectorAll(".needs-validation"));
-        const handler = (event) => {
-            const form = event.currentTarget;
-            if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            form.classList.add("was-validated");
-        };
-
-        forms.forEach((form) => form.addEventListener("submit", handler, false));
-        return () => forms.forEach((form) => form.removeEventListener("submit", handler, false));
-    }, []);
-
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        const form = document.querySelector("form.needs-validation");
+
+        if (!form.checkValidity()) {
+            form.classList.add("was-validated");
+            return;
+        }
+
         setLoading(true);
         setError(null);
 
         try {
-            const data = await apiLogin(usuario, password, role);
-            console.log("login response:", data);
-
-            if (!data || !data.access_token) {
-                setError("Respuesta inválida del servidor");
-                setLoading(false);
-                return;
-            }
-
-            // Guardar access token y role en el contexto (memoria)
-            authContext.login(data.access_token, data.role);
-
-            // Solo para el mock: guardar role en sessionStorage para que refreshWithCookie lo pueda devolver
-            if (data.role) sessionStorage.setItem("mock_role", data.role);
-
-            // Navegar a la ruta protegida una vez seteado el contexto
+            await authContext.login({ usuario, password, role });
             navigate("/home", { replace: true });
         } catch (err) {
-            console.error("login error:", err);
             setError(err?.message || "Error en la autenticación");
         } finally {
             setLoading(false);
         }
+
     };
 
     return (
-        <form className="needs-validation" noValidate onSubmit={handleSubmit}>
+        <form className="needs-validation" noValidate onSubmit={(e) => e.preventDefault()}>
             <h2 className="text-center fw-bold mb-4 fs-4">Iniciar sesión</h2>
 
             <div className="mb-3">
@@ -71,7 +50,6 @@ function Login() {
                     value={usuario}
                     onChange={(e) => setUsuario(e.target.value)}
                     required
-                    aria-label="Usuario"
                 />
                 <div className="invalid-feedback">Debe rellenar este campo.</div>
             </div>
@@ -84,7 +62,6 @@ function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    aria-label="Contraseña"
                 />
                 <div className="invalid-feedback">Ingrese su contraseña para continuar.</div>
             </div>
@@ -95,30 +72,27 @@ function Login() {
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
                     required
-                    aria-label="Rol"
                 >
                     <option value="">Seleccione su rol</option>
-                    <option value="admin">Administrador</option>
+                    <option value="administrador">Administrador</option>
                     <option value="investigador">Investigador</option>
                 </select>
                 <div className="invalid-feedback">Debe elegir un rol.</div>
             </div>
 
             <button
-                type="submit"
+                type="button"
                 className="btn btn-brand w-100"
                 disabled={loading}
-                aria-busy={loading}
+                onClick={(e) => handleSubmit(e)}
             >
                 {loading ? "Accediendo..." : "Acceder"}
             </button>
 
+
+
             {error && (
-                <div
-                    className="alert alert-danger mt-3 text-center"
-                    role="alert"
-                    aria-live="polite"
-                >
+                <div className="alert alert-danger mt-3 text-center">
                     {error}
                 </div>
             )}

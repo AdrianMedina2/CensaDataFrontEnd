@@ -1,28 +1,51 @@
-import { refreshWithCookie } from "../services/api";
+import { refreshRequest } from "../services/api";
 
 /**
 * apiFetch(url, options, authContext)
-* - usa Authorization Bearer si hay token en contexto
-* - usa credentials: "include" para que la cookie viaje
-* - si recibe 401 intenta refreshWithCookie() y reintenta la petición
+* Maneja automáticamente:
+*  - Enviar accessToken en Authorization
+*  - Detectar 401 (token expirado)
+*  - Intentar refresh con refreshToken
+*  - Guardar nuevos tokens en AuthContext
+*  - Reintentar la petición original
+*  - Hacer logout si el refresh falla
 */
 export async function apiFetch(url, options = {}, authContext) {
-    const token = authContext?.token;
-    const headers = { ...(options.headers || {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+    const access = authContext?.accessToken;
+    const refresh = authContext?.refreshToken;
 
-    let res = await fetch(url, { ...options, headers, credentials: "include" });
+    const headers = {
+        ...(options.headers || {}),
+        ...(access ? { Authorization: `Bearer ${access}` } : {})
+    };
+
+    // 1) petición original
+    let res = await fetch(url, { ...options, headers });
+
     if (res.status !== 401) return res;
 
+    // 2) si devuelve 401 se intenta refresh
     try {
-        const newData = await refreshWithCookie();
-        if (!newData || !newData.access_token) throw new Error("Refresh no devolvió access_token");
+        if (!refresh) throw new Error("No hay refresh token");
 
-        authContext.setToken(newData.access_token);
+        const data = await refreshRequest({ refresh_token: refresh });
 
-        const retryHeaders = { ...(options.headers || {}), Authorization: `Bearer ${newData.access_token}` };
-        return fetch(url, { ...options, headers: retryHeaders, credentials: "include" });
-    } catch (err) {
-        try { await authContext.logout(); } catch (e) { }
-        throw err;
+        if (!data || !data.access_token) throw new Error("Refresh inválido");
+
+        // guardar nuevos tokens
+        authContext.setTokens(data.access_token, data.refresh_token, data.role);
+
+        // 3) reintentar petición original con nuevo token
+        const retryHeaders = {
+            ...(options.headers || {}),
+            Authorization: `Bearer ${data.access_token}`
+        };
+
+        return fetch(url, { ...options, headers: retryHeaders });
+
+    } catch (error) {
+        // Si refresh falla, hacer logout para limpiar sesión
+        try { await authContext.logout(); } catch (_) { }
+        throw error;
     }
 }
