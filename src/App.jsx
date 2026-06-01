@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login/Login.jsx";
 import Recuperar from "./pages/RecuperarContraseña/RecuperarContraseña.jsx";
 import Home from "./pages/Home/Home.jsx";
@@ -28,6 +28,18 @@ function App() {
                     </RequireAuth>
                 }
             />
+            {/* Usar "/" como Home */}
+            <Route
+                path="/"
+                element={
+                    <RequireAuth>
+                        <MainLayout><Home /></MainLayout>
+                    </RequireAuth>
+                }
+            />
+
+            {/* Catch-all: cualquier ruta desconocida dirige a login */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
     );
 }

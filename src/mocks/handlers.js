@@ -19,7 +19,7 @@ const USERS = {
 
 export const handlers = [
 
-// LOGIN
+    // LOGIN
     http.post("/auth/login", async ({ request }) => {
         const body = await request.json();
         const { usuario, password, role } = body;
@@ -61,6 +61,7 @@ export const handlers = [
         // Generar tokens mock
         fakeAccess = `access.${Date.now()}`;
         fakeRefresh = `refresh.${Date.now()}`;
+        localStorage.setItem("mockRefresh", fakeRefresh);
         fakeRole = user.role;
 
         return HttpResponse.json({
@@ -82,7 +83,9 @@ export const handlers = [
             );
         }
 
-        if (refresh_token !== fakeRefresh) {
+        const storedRefresh = localStorage.getItem("mockRefresh");
+
+        if (refresh_token !== storedRefresh) {
             return HttpResponse.json(
                 { message: "Refresh inválido" },
                 { status: 401 }
@@ -92,6 +95,7 @@ export const handlers = [
         // Rotación de tokens
         fakeAccess = `access.${Date.now()}`;
         fakeRefresh = `refresh.${Date.now()}`;
+        localStorage.setItem("mockRefresh", fakeRefresh);
 
         return HttpResponse.json({
             access_token: fakeAccess,
@@ -101,14 +105,14 @@ export const handlers = [
         });
     }),
 
-    // LOGOUT
-    http.post("/auth/logout", async () => {
-        fakeAccess = null;
-        fakeRefresh = null;
-        fakeRole = null;
+// LOGOUT
+http.post("/auth/logout", async () => {
+    fakeAccess = null;
+    fakeRefresh = null;
+    fakeRole = null;
 
-        return HttpResponse.json({ ok: true });
-    }),
+    return HttpResponse.json({ ok: true });
+}),
 
     // Endpoint protegido de ejemplo
     http.get("/api/protected", ({ request }) => {

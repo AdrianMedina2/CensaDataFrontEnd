@@ -31,6 +31,8 @@ export function AuthProvider({ children }) {
 
         if (userRole) localStorage.setItem("role", userRole);
         else localStorage.removeItem("role");
+
+        console.log("Guardando tokens:", { access, refresh, userRole });
     }, []);
 
     const login = useCallback(async ({ usuario, password, role }) => {
@@ -49,24 +51,14 @@ export function AuthProvider({ children }) {
 
     useEffect(() => {
         let mounted = true;
-        let alreadyRefreshed = false; // evita doble ejecución en Strict Mode
-
         (async () => {
             if (!refreshToken || refreshToken === "null") {
                 setInitializing(false);
                 return;
             }
-
-            if (alreadyRefreshed) {
-                setInitializing(false);
-                return;
-            }
-
-            alreadyRefreshed = true;
-
             try {
                 const data = await refreshRequest({ refresh_token: refreshToken });
-
+                console.log("Respuesta refresh:", data);
                 if (mounted && data?.access_token) {
                     setTokens(data.access_token, data.refresh_token, data.role || role);
                 }
@@ -76,9 +68,8 @@ export function AuthProvider({ children }) {
                 if (mounted) setInitializing(false);
             }
         })();
-
         return () => { mounted = false };
-    }, []);
+    }, []); // solo corre una vez al montar
 
 
     const value = useMemo(() => ({
