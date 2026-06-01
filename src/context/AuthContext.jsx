@@ -1,4 +1,4 @@
-import React, { createContext, useState, useCallback, useMemo, useEffect } from "react";
+import React, { createContext, useState, useCallback, useMemo, useEffect, useContext } from "react";
 import { loginRequest, refreshRequest, logoutRequest } from "../services/api";
 
 export const AuthContext = createContext({
@@ -11,6 +11,10 @@ export const AuthContext = createContext({
     logout: () => { },
     setTokens: () => { }
 });
+
+export function useAuth() {
+    return useContext(AuthContext); // hook que expone el contexto
+}
 
 export function AuthProvider({ children }) {
     const [accessToken, setAccessToken] = useState(() => localStorage.getItem("accessToken"));

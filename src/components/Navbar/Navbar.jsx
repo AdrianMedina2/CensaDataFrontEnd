@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getProfile, logoutRequest } from "../../services/api";
+import { getProfile } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 import "./Navbar.css";
 
 export default function Navbar() {
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
+    const { logout } = useAuth();
 
     useEffect(() => {
         getProfile().then(setUser).catch(() => {
@@ -18,20 +20,13 @@ export default function Navbar() {
 
     const handleLogout = async () => {
         try {
-            // Espera a que el contexto haga la limpieza o al backend si aplica
-            await authContext.logout();
+            await logout();
         } catch (err) {
             console.error("Logout failed:", err);
-            // Aun así se fuerza limpieza local
-            sessionStorage.removeItem("mock_refresh_cookie");
-            sessionStorage.removeItem("mock_role");
-            localStorage.removeItem("role");
         } finally {
-            // Navegación SPA que reemplaza la entrada actual del historial
             navigate("/login", { replace: true });
         }
     };
-
 
     const displayName = user?.name || "Usuario";
 

@@ -105,60 +105,62 @@ export const handlers = [
         });
     }),
 
-// LOGOUT
-http.post("/auth/logout", async () => {
-    fakeAccess = null;
-    fakeRefresh = null;
-    fakeRole = null;
+    // LOGOUT
+    http.post("/auth/logout", async () => {
+        fakeAccess = null;
+        fakeRefresh = null;
+        fakeRole = null;
+        localStorage.removeItem("mockRefresh");
 
-    return HttpResponse.json({ ok: true });
-}),
+        return HttpResponse.json({ ok: true });
+    }),
 
-    // Endpoint protegido de ejemplo
-    http.get("/api/protected", ({ request }) => {
-        const auth = request.headers.get("authorization") || "";
 
-        if (!auth.startsWith("Bearer ")) {
-            return HttpResponse.json(
-                { message: "Token no enviado" },
-                { status: 401 }
-            );
-        }
+// Endpoint protegido de ejemplo
+http.get("/api/protected", ({ request }) => {
+    const auth = request.headers.get("authorization") || "";
 
-        const token = auth.split(" ")[1];
+    if (!auth.startsWith("Bearer ")) {
+        return HttpResponse.json(
+            { message: "Token no enviado" },
+            { status: 401 }
+        );
+    }
 
-        if (token !== fakeAccess) {
-            return HttpResponse.json(
-                { message: "Token inválido o expirado" },
-                { status: 401 }
-            );
-        }
+    const token = auth.split(" ")[1];
 
-        // Respuesta según rol
-        if (fakeRole === "administrador") {
-            return HttpResponse.json({
-                data: "Contenido para ADMINISTRADOR",
-                permisos: [
-                    "gestionar usuarios",
-                    "ver reportes",
-                    "configurar sistema"
-                ]
-            });
-        }
+    if (token !== fakeAccess) {
+        return HttpResponse.json(
+            { message: "Token inválido o expirado" },
+            { status: 401 }
+        );
+    }
 
-        if (fakeRole === "investigador") {
-            return HttpResponse.json({
-                data: "Contenido para INVESTIGADOR",
-                permisos: [
-                    "levantar encuestas",
-                    "ver sus propios datos"
-                ]
-            });
-        }
-
+    // Respuesta según rol
+    if (fakeRole === "administrador") {
         return HttpResponse.json({
-            data: "Rol desconocido",
-            permisos: []
+            data: "Contenido para ADMINISTRADOR",
+            permisos: [
+                "gestionar usuarios",
+                "ver reportes",
+                "configurar sistema"
+            ]
         });
-    })
+    }
+
+    if (fakeRole === "investigador") {
+        return HttpResponse.json({
+            data: "Contenido para INVESTIGADOR",
+            permisos: [
+                "levantar encuestas",
+                "ver sus propios datos"
+            ]
+        });
+    }
+
+    return HttpResponse.json({
+        data: "Rol desconocido",
+        permisos: []
+    });
+})
 ];
