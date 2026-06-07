@@ -1,0 +1,30 @@
+.auth-layout {
+    overflow: hidden;
+}
+
+.auth-card {
+    width: 50%;
+    max-width: 520px;
+}
+
+@media (max-width: 768px) {
+    .auth-card {
+        width: 95%;
+        max-width: none;
+    }
+
+    .auth-card .bg-white {
+        padding: 1.25rem;
+        border-radius: 10px;
+    }
+
+    .logo-mobile {
+        height: 65px;
+        /* más pequeño en móvil */
+    }
+}
+
+.logo {
+    height: 100px;
+    /* tamaño normal en desktop */
+}

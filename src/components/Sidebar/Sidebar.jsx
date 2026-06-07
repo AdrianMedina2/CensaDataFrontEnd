@@ -31,7 +31,7 @@ export default function SidebarMenu() {
                         <Link className="nav-link fs-5 text-white" to="/home" data-bs-dismiss="offcanvas">
                             <i className="bi bi-speedometer2 me-2" aria-hidden="true"></i> Home
                         </Link>
-                        <Link className="nav-link fs-5 text-white" to="/proyectos" data-bs-dismiss="offcanvas">
+                        <Link className="nav-link fs-5 text-white" to="#" data-bs-dismiss="offcanvas">
                             <i className="bi bi-folder me-2" aria-hidden="true"></i> Proyectos
                         </Link>
                         <Link className="nav-link fs-5 text-white" to="/reportes" data-bs-dismiss="offcanvas">

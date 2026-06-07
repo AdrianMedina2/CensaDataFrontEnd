@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getProfile } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import "./Navbar.css";
 
@@ -10,17 +9,15 @@ export default function Navbar() {
     const { logout } = useAuth();
 
     useEffect(() => {
-        getProfile().then(setUser).catch(() => {
-            setUser({
-                name: localStorage.getItem("user_name") || "Usuario",
-                role: localStorage.getItem("role") || "rol",
-            });
+        setUser({
+            name: localStorage.getItem("user_name") || "Usuario",
+            role: localStorage.getItem("role") || "rol",
         });
     }, []);
 
     const handleLogout = async () => {
         try {
-            await logout();
+            logout(); // limpia tokens y rol
         } catch (err) {
             console.error("Logout failed:", err);
         } finally {
@@ -58,6 +55,7 @@ export default function Navbar() {
                         <span className="user-avatar me-2">
                             {displayName.charAt(0).toUpperCase()}
                         </span>
+                        {/* Ocultar nombre en xs, mostrar desde sm */}
                         <span className="d-none d-sm-inline">{displayName}</span>
                     </button>
                     <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuButton">

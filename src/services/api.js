@@ -1,9 +1,9 @@
-// Base de la API real (solo se usa en producción)
-const API_BASE = import.meta.env.DEV ? "" : "";
+const API_BASE = import.meta.env.VITE_API_BASE;
+
 
 // Login: envía usuario, password y role para obtener access_token, refresh_token y role
 export async function loginRequest({ usuario, password, role }) {
-    const res = await fetch(`${API_BASE}/auth/login`, {
+    const res = await fetch(`${API_BASE}/token/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

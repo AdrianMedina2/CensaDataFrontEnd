@@ -41,8 +41,14 @@ function TiltCard({ children, className }) {
             if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
             card.style.transition = "transform 200ms cubic-bezier(.2,.9,.2,1)";
             card.style.transform = "perspective(1400px) rotateX(0deg) rotateY(0deg) translateZ(0)";
-            setTimeout(() => { if (card) card.style.transition = ""; }, 210);
+            setTimeout(() => {
+                if (card) {
+                    card.style.transition = "";
+                    card.style.transform = "none";
+                }
+            }, 210);
         };
+
 
         wrapper.addEventListener("mousemove", onMove);
         wrapper.addEventListener("mouseleave", onLeave);
