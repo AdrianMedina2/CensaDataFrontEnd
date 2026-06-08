@@ -7,6 +7,7 @@ import AuthLayout from "./layouts/AuthLayout/AuthLayout.jsx";
 import MainLayout from "./layouts/MainLayout/MainLayout.jsx";
 import RequireAuth from "./components/Auth/RequireAuth.jsx";
 import { AuthContext } from "./context/AuthContext";
+import Censos from "./pages/Censos/Censos.jsx";
 
 function App() {
     const { initializing } = useContext(AuthContext);
@@ -28,7 +29,6 @@ function App() {
                     </RequireAuth>
                 }
             />
-            {/* Usar "/" como Home */}
             <Route
                 path="/"
                 element={
@@ -37,8 +37,16 @@ function App() {
                     </RequireAuth>
                 }
             />
+            <Route
+                path="/censos"
+                element={
+                    <RequireAuth>
+                        <MainLayout><Censos /></MainLayout>
+                    </RequireAuth>
+                }
+            />
 
-            {/* Catch-all: cualquier ruta desconocida dirige a login */}
+            {/* Catch-all */}
             <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
     );

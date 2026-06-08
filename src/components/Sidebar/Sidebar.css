@@ -1,40 +1,62 @@
-.sidebar {
-    width: 220px;
-    min-height: calc(100vh - 60px);
-    /* ocupa toda la altura debajo de la navbar */
+:root {
+    --navbar-initial-height: 70px;
+    /* se actualiza por JS al montar */
 }
 
+/* Sidebar: fija al viewport, no empuja el flujo del documento */
+.sidebar {
+    width: 220px;
+    position: fixed;
+    top: 0;
+    /* importante: no empuja el body */
+    left: 0;
+    height: 100vh;
+    overflow: hidden;
+    /* el scroll lo manejamos dentro del nav interno */
+    z-index: 1030;
+    background: var(--bs-dark, #0d6efd);
+    color: #fff;
+}
+
+/* Contenido interno: scroll y padding-top para quedar visualmente debajo de la navbar */
+.sidebar-inner {
+    height: 100%;
+    overflow-y: auto;
+    padding-top: var(--navbar-initial-height);
+    box-sizing: border-box;
+    padding-bottom: 1rem;
+}
+
+/* estilos de los links */
 .sidebar .nav-link {
     padding: .6rem 1rem;
     transition: background-color .15s ease, transform .15s ease;
+    color: #fff;
 }
 
 .sidebar .nav-link:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: rgba(255, 255, 255, 0.06);
     border-radius: .25rem;
     transform: translateX(4px);
 }
 
-@media (min-width: 768px) {
-    .sidebar {
-        position: fixed;
-        top: 60px;
-        /* ajusta si tu navbar tiene otro alto */
-        left: 0;
-        height: calc(100vh - 60px);
-        overflow-y: auto;
-        z-index: 1030;
-        /* por debajo del offcanvas de Bootstrap */
-    }
-
-    /* si usas border-end y ves la línea, hazla transparente */
-    .sidebar.border-end {
-        border-right: 1px solid transparent;
-    }
+/* Placeholder ancho en layout (MainLayout debe tener este placeholder) */
+.d-none.d-md-block[style] {
+    width: 220px;
 }
 
-/* footer: quitar borde superior si existe */
+/* Footer */
 .footer {
     border-top: none;
     z-index: 1020;
+}
+
+/* Asegurar que main no tenga margin-top forzado por otras reglas */
+main {
+    margin-top: 0 !important;
+}
+
+/* Asegurar que la navbar quede por encima si se superponen */
+.navbar {
+    z-index: 1040;
 }

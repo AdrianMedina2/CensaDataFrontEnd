@@ -22,7 +22,7 @@ api.interceptors.response.use(
             if (refresh) {
                 try {
                     const res = await axios.post(
-                        `${import.meta.env.VITE_API_BASE}/token/refresh/`,
+                        `${import.meta.env.VITE_API_BASE}/api/token/refresh/`,
                         { refresh }
                     );
                     localStorage.setItem("accessToken", res.data.access);

@@ -1,23 +1,17 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import "./Navbar.css";
 
 export default function Navbar() {
-    const [user, setUser] = useState(null);
     const navigate = useNavigate();
-    const { logout } = useAuth();
-
-    useEffect(() => {
-        setUser({
-            name: localStorage.getItem("user_name") || "Usuario",
-            role: localStorage.getItem("role") || "rol",
-        });
-    }, []);
+    const { auth, logout } = useAuth();
+    const [open, setOpen] = useState(false);
+    const dropdownRef = useRef(null);
 
     const handleLogout = async () => {
         try {
-            logout(); // limpia tokens y rol
+            logout();
         } catch (err) {
             console.error("Logout failed:", err);
         } finally {
@@ -25,12 +19,26 @@ export default function Navbar() {
         }
     };
 
-    const displayName = user?.name || "Usuario";
+    const displayName = auth?.user?.Usuario || "Usuario";
+    const role = auth?.user?.role || "Rol";
+    const email = auth?.user?.email || "";
+
+    // Cierra el dropdown al hacer click fuera
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
 
     return (
         <nav className="navbar navbar-expand-md navbar-dark bg-brand px-3">
             <div className="container-fluid">
-                {/* Toggle para sidebar en móvil */}
                 <button
                     className="navbar-toggler d-md-none"
                     type="button"
@@ -41,32 +49,46 @@ export default function Navbar() {
                     <span className="navbar-toggler-icon"></span>
                 </button>
 
-                {/* Logo */}
-                <a className="navbar-brand fs-4 ms-2" href="/home">CensaData</a>
+                <Link to="/home" className="logo-link">
+                    <img src="/CensaDataWhite.png" alt="CensaData" className="ms-4 logo--navbar" />
+                </Link>
 
-                {/* Dropdown usuario */}
-                <div className="dropdown ms-auto">
+                <div className="dropdown ms-auto position-relative" ref={dropdownRef}>
                     <button
-                        className="btn btn-link text-white dropdown-toggle d-flex align-items-center"
-                        id="userMenuButton"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
+                        className="btn btn-link text-white d-flex align-items-center text-decoration-none"
+                        onClick={() => setOpen(!open)}
                     >
-                        <span className="user-avatar me-2">
-                            {displayName.charAt(0).toUpperCase()}
-                        </span>
-                        {/* Ocultar nombre en xs, mostrar desde sm */}
+                        <i className="bi bi-person-circle fs-4 me-2"></i>
                         <span className="d-none d-sm-inline">{displayName}</span>
+                        <i className="bi bi-caret-down-fill ms-2"></i>
                     </button>
-                    <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuButton">
-                        <li><span className="dropdown-item-text">{user?.role || "Rol"}</span></li>
-                        <li><hr className="dropdown-divider" /></li>
-                        <li>
-                            <button className="dropdown-item" onClick={handleLogout}>
-                                Cerrar sesión
-                            </button>
-                        </li>
-                    </ul>
+                    {open && (
+                        <ul
+                            className="dropdown-menu dropdown-menu-end shadow show"
+                            style={{
+                                position: "fixed",
+                                top: "60px",
+                                right: "10px",
+                                zIndex: 1050
+                            }}
+                        >
+                            <li className="px-3 py-2">
+                                <div className="fw-bold">{displayName}</div>
+                                <div className="text-muted small">{email}</div>
+                                <span className="badge bg-secondary mt-1">{role}</span>
+                            </li>
+                            <li><hr className="dropdown-divider" /></li>
+                            <li>
+                                <button
+                                    className="dropdown-item btn-brand d-flex align-items-center"
+                                    onClick={handleLogout}
+                                >
+                                    <i className="bi bi-box-arrow-right me-2"></i>
+                                    Cerrar sesión
+                                </button>
+                            </li>
+                        </ul>
+                    )}
                 </div>
             </div>
         </nav>

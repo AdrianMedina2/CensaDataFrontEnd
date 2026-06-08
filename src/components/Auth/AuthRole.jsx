@@ -2,24 +2,20 @@ import React, { useContext } from "react";
 import { Navigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 
-// AuthRole: Componente para proteger rutas según el rol del usuario
 export default function AuthRole({ children, allowed }) {
-    const { isAuthenticated, role, initializing } = useContext(AuthContext);
+    const { isAuthenticated, auth, initializing } = useContext(AuthContext);
 
-    // Mientras se verifica la sesión inicial
     if (initializing) return <div>Comprobando sesión...</div>;
-
-    // Si no hay sesión dirige al login
     if (!isAuthenticated) return <Navigate to="/login" replace />;
 
-    // se normaliza allowed a array para facilitar la comprobación
+    // Rol: primero el de /me, luego el de localStorage como respaldo para eviatr problemas en el caso de que el perfil no se haya cargado aún
+    const currentRole = auth?.user?.role || auth?.role;
+
     const allowedRoles = Array.isArray(allowed) ? allowed : [allowed];
 
-    // Si el rol del usuario NO está permitido
-    if (!allowedRoles.includes(role)) {
-        return <Navigate to="/unauthorized" replace />;
+    if (!allowedRoles.includes(currentRole)) {
+        return <Navigate to="/login" replace />;
     }
 
-    // Si todo está bien → renderiza la ruta protegida
     return children;
 }

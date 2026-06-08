@@ -1,22 +1,81 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { Offcanvas } from "bootstrap";
 import "./Sidebar.css";
 
 export default function SidebarMenu() {
+    const { auth } = useAuth();
+    const role = auth?.user?.role || auth?.role;
+
+    const handleNavClick = () => {
+        const offcanvasEl = document.getElementById("sidebarOffcanvas");
+        if (offcanvasEl) {
+            const bsOffcanvas = Offcanvas.getInstance(offcanvasEl);
+            bsOffcanvas?.hide();
+        }
+    };
+
+    // Mantener limpieza del backdrop (no tocar)
+    useEffect(() => {
+        const offcanvasEl = document.getElementById("sidebarOffcanvas");
+        const onHidden = () => {
+            document.querySelectorAll(".offcanvas-backdrop").forEach(el => el.remove());
+            document.body.style.overflow = "";
+            document.body.style.paddingRight = "";
+        };
+        if (offcanvasEl) offcanvasEl.addEventListener("hidden.bs.offcanvas", onHidden);
+        return () => {
+            if (offcanvasEl) offcanvasEl.removeEventListener("hidden.bs.offcanvas", onHidden);
+        };
+    }, []);
+
+    // Solo fijar la variable CSS con la altura inicial de la navbar
+    useEffect(() => {
+        const navbar = document.querySelector('.navbar');
+        if (!navbar) return;
+        const initialNavH = Math.round(navbar.getBoundingClientRect().height) || 70;
+        document.documentElement.style.setProperty('--navbar-initial-height', `${initialNavH}px`);
+    }, []);
+
+    const commonLinks = (
+        <>
+            <Link className="nav-link fs-5 text-white" to="/home" onClick={handleNavClick}>
+                <i className="bi bi-speedometer2 me-2" aria-hidden="true"></i> Home
+            </Link>
+        </>
+    );
+
+    const adminLinks = (
+        <>
+            <Link className="nav-link fs-5 text-white" to="/dashboard" onClick={handleNavClick}>
+                <i className="bi bi-speedometer2 me-2" aria-hidden="true"></i> Dashboard
+            </Link>
+            <Link className="nav-link fs-5 text-white" to="/censos" onClick={handleNavClick}>
+                <i className="bi bi-folder me-2" aria-hidden="true"></i> Censos
+            </Link>
+        </>
+    );
+
+    const investigadorLinks = (
+        <>
+            <Link className="nav-link fs-5 text-white" to="/proyectos" onClick={handleNavClick}>
+                <i className="bi bi-folder me-2" aria-hidden="true"></i> Mis Proyectos
+            </Link>
+            <Link className="nav-link fs-5 text-white" to="/reportes" onClick={handleNavClick}>
+                <i className="bi bi-bar-chart me-2" aria-hidden="true"></i> Mis Reportes
+            </Link>
+        </>
+    );
+
     return (
         <>
             {/* Sidebar fijo en escritorio */}
             <aside className="d-none d-md-block bg-brand sidebar" aria-label="Sidebar">
-                <nav className="nav flex-column pt-3">
-                    <Link className="nav-link fs-5 text-white" to="/home">
-                        <i className="bi bi-speedometer2 me-2" aria-hidden="true"></i> Dashboard
-                    </Link>
-                    <Link className="nav-link fs-5 text-white" to="/proyectos">
-                        <i className="bi bi-folder me-2" aria-hidden="true"></i> Proyectos
-                    </Link>
-                    <Link className="nav-link fs-5 text-white" to="/reportes">
-                        <i className="bi bi-bar-chart me-2" aria-hidden="true"></i> Reportes
-                    </Link>
+                <nav className="nav flex-column sidebar-inner">
+                    {commonLinks}
+                    {role === "ADMINISTRADOR" && adminLinks}
+                    {role === "INVESTIGADOR" && investigadorLinks}
                 </nav>
             </aside>
 
@@ -28,15 +87,9 @@ export default function SidebarMenu() {
                 </div>
                 <div className="offcanvas-body bg-brand">
                     <nav className="nav flex-column">
-                        <Link className="nav-link fs-5 text-white" to="/home" data-bs-dismiss="offcanvas">
-                            <i className="bi bi-speedometer2 me-2" aria-hidden="true"></i> Home
-                        </Link>
-                        <Link className="nav-link fs-5 text-white" to="#" data-bs-dismiss="offcanvas">
-                            <i className="bi bi-folder me-2" aria-hidden="true"></i> Proyectos
-                        </Link>
-                        <Link className="nav-link fs-5 text-white" to="/reportes" data-bs-dismiss="offcanvas">
-                            <i className="bi bi-bar-chart me-2" aria-hidden="true"></i> Reportes
-                        </Link>
+                        {commonLinks}
+                        {role === "ADMINISTRADOR" && adminLinks}
+                        {role === "INVESTIGADOR" && investigadorLinks}
                     </nav>
                 </div>
             </div>

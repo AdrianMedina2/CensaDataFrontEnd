@@ -1,4 +1,9 @@
 footer {
     font-size: 0.85rem;
-    /* un poco más pequeño */
+    height: 40px;
+    /* alto fijo */
+    line-height: 40px;
+    /* centra verticalmente el texto */
+    padding: 0;
+    /* elimina padding extra */
 }
