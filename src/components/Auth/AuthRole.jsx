@@ -14,7 +14,7 @@ export default function AuthRole({ children, allowed }) {
     const allowedRoles = Array.isArray(allowed) ? allowed : [allowed];
 
     if (!allowedRoles.includes(currentRole)) {
-        return <Navigate to="/login" replace />;
+        return <Navigate to="/home" replace />;
     }
 
     return children;

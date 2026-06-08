@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { getCensos, createCenso, patchCenso, deleteCenso } from "../../services";
+import TiltCard from "../../components/TiltCard/TiltCard.jsx";
 
 export default function Censos() {
     const [censos, setCensos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [message, setMessage] = useState(null); // mensajes de confirmación
+    const [processing, setProcessing] = useState(false);
 
     const [formData, setFormData] = useState({
         nombrecenso: "",
@@ -42,12 +44,15 @@ export default function Censos() {
 
     const handleCreate = async (e) => {
         e.preventDefault();
+        setProcessing(true);
         if (!formData.nombrecenso || formData.nombrecenso.length < 3) {
             setMessage({ type: "danger", text: "El nombre debe tener al menos 3 caracteres ❌" });
+            setProcessing(false);
             return;
         }
         if (!formData.fechainiciocenso || !formData.fechafincenso) {
             setMessage({ type: "danger", text: "Debes seleccionar fechas válidas ❌" });
+            setProcessing(false);
             return;
         }
         try {
@@ -59,9 +64,11 @@ export default function Censos() {
             console.error("Error al crear censo:", err.response?.data || err);
             setMessage({ type: "danger", text: "Error al crear censo ❌" });
         }
+        setProcessing(false);
     };
 
     const handleDelete = async (id) => {
+        setProcessing(true);
         try {
             await deleteCenso(id);
             setCensos((prev) =>
@@ -72,6 +79,7 @@ export default function Censos() {
             console.error("Error al desactivar censo:", err);
             setMessage({ type: "danger", text: "Error al desactivar censo ❌" });
         }
+        setProcessing(false);
     };
 
     const handleEditClick = (censo) => {
@@ -89,8 +97,10 @@ export default function Censos() {
     };
 
     const handleEditSave = async (id) => {
+        setProcessing(true);
         if (!editData.nombrecenso || editData.nombrecenso.length < 3) {
             setMessage({ type: "danger", text: "El nombre debe tener al menos 3 caracteres ❌" });
+            setProcessing(false);
             return;
         }
         try {
@@ -100,9 +110,11 @@ export default function Censos() {
             );
             setEditId(null);
             setMessage({ type: "success", text: "Censo editado correctamente ✏️" });
+            setProcessing(false);
         } catch (err) {
             console.error("Error al editar censo:", err.response?.data || err);
             setMessage({ type: "danger", text: "Error al editar censo ❌" });
+            setProcessing(false);
         }
     };
 
@@ -120,6 +132,14 @@ export default function Censos() {
 
     return (
         <div className="container mt-4">
+
+            {processing && (
+                <div className="alert alert-warning d-flex align-items-center" role="alert">
+                    <div className="spinner-border spinner-border-sm me-2" role="status"></div>
+                    Procesando acción, por favor espera…
+                </div>
+            )}
+
             {/* Mensajes de confirmación */}
             {message && (
                 <div className={`alert alert-${message.type} alert-dismissible fade show`} role="alert">
@@ -129,7 +149,7 @@ export default function Censos() {
             )}
 
             {/* Formulario de creación arriba */}
-            <h3>Crear nuevo censo</h3>
+            <h3 className="fw-bold">Crear nuevo censo</h3>
             <form onSubmit={handleCreate} className="row g-3 mb-4 needs-validation" noValidate>
                 <div className="col-md-6">
                     <label className="form-label">Nombre</label>
@@ -181,13 +201,13 @@ export default function Censos() {
                 </div>
             </form>
 
-            <h2>Censos activos</h2>
+            <h3 className="fw-bold">Censos activos</h3>
             <div className="row mt-3">
                 {censos
                     .filter((c) => c.estado)
                     .sort((a, b) => b.id - a.id)
                     .map((censo) => (
-                        <div className="col-md-4 mb-3" key={censo.id}>
+                        <TiltCard className="col-md-4 mb-3" key={censo.id}>
                             <div className="card h-100">
                                 <div className="card-body">
                                     {editId === censo.id ? (
@@ -232,9 +252,11 @@ export default function Censos() {
                                         </>
                                     ) : (
                                         <>
-                                            <h5 className="card-title">{censo.nombrecenso || "Sin nombre"}</h5>
+                                            <h5 className="card-title color-brand fw-bold">{censo.nombrecenso || "Sin nombre"}</h5>
                                             <p className="card-text">
-                                                <strong>Encuestados:</strong> {censo.cantidadencuestados || 0}
+                                                <strong>Personas encuestadas:</strong> {censo.cantidadencuestados || 0}
+                                                <br />
+                                                <strong>Casas encuestadas:</strong> {censo.cantidadrespuestaspositivas || 0}
                                                 <br />
                                                 <strong>Inicio:</strong>{" "}
                                                 {new Date(censo.fechainiciocenso).toLocaleDateString()}
@@ -258,7 +280,7 @@ export default function Censos() {
                                     )}
                                 </div>
                             </div>
-                        </div>
+                        </TiltCard>
                     ))}
             </div>
         </div>

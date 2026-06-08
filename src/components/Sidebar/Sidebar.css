@@ -1,33 +1,54 @@
 :root {
     --navbar-initial-height: 70px;
-    /* se actualiza por JS al montar */
 }
 
-/* Sidebar: fija al viewport, no empuja el flujo del documento */
+/* Sidebar fija al viewport */
 .sidebar {
     width: 220px;
     position: fixed;
     top: 0;
-    /* importante: no empuja el body */
     left: 0;
     height: 100vh;
     overflow: hidden;
-    /* el scroll lo manejamos dentro del nav interno */
     z-index: 1030;
     background: var(--bs-dark, #0d6efd);
     color: #fff;
 }
 
-/* Contenido interno: scroll y padding-top para quedar visualmente debajo de la navbar */
+/* Wrapper del logo duplicado */
+.sidebar-logo-wrapper {
+    height: var(--navbar-initial-height);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 0.25rem;
+    z-index: 1035;
+    pointer-events: none;
+}
+
+/* Logo duplicado (oculto por defecto) */
+.sidebar-logo {
+    height: calc(var(--navbar-initial-height) * 0.57);
+    width: auto;
+    object-fit: contain;
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity .18s ease, transform .18s ease;
+    pointer-events: none;
+}
+
+/* Contenido interno con scroll y padding para quedar visualmente debajo de la navbar */
 .sidebar-inner {
-    height: 100%;
+    height: calc(100vh - var(--navbar-initial-height));
     overflow-y: auto;
-    padding-top: var(--navbar-initial-height);
+    padding-top: 0;
+    /* el padding visual ya lo maneja el logo-wrapper */
     box-sizing: border-box;
     padding-bottom: 1rem;
 }
 
-/* estilos de los links */
+/* Links */
 .sidebar .nav-link {
     padding: .6rem 1rem;
     transition: background-color .15s ease, transform .15s ease;
@@ -40,23 +61,17 @@
     transform: translateX(4px);
 }
 
-/* Placeholder ancho en layout (MainLayout debe tener este placeholder) */
+/* Placeholder ancho en layout */
 .d-none.d-md-block[style] {
     width: 220px;
 }
 
-/* Footer */
-.footer {
-    border-top: none;
-    z-index: 1020;
-}
-
-/* Asegurar que main no tenga margin-top forzado por otras reglas */
+/* Asegurar que main no tenga margin-top forzado */
 main {
     margin-top: 0 !important;
 }
 
-/* Asegurar que la navbar quede por encima si se superponen */
+/* Navbar por encima si se superponen */
 .navbar {
     z-index: 1040;
 }
