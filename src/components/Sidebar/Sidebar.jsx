@@ -89,6 +89,9 @@ export default function SidebarMenu() {
             <Link className="nav-link fs-5 text-white" to="/investigadores" onClick={handleNavClick}>
                 <i className="bi bi-person-badge me-2" aria-hidden="true"></i> Investigadores
             </Link>
+            <Link className="nav-link fs-5 text-white" to="/personal" onClick={handleNavClick}>
+                <i className="bi bi-person" aria-hidden="true"></i> Personal
+            </Link>
 
         </>
     );

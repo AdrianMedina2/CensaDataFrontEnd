@@ -10,6 +10,7 @@ import { AuthContext } from "./context/AuthContext";
 import Censos from "./pages/Censos/Censos.jsx";
 import AuthRole from "./components/Auth/AuthRole.jsx";
 import Investigadores from "./pages/Investigadores/Investigadores.jsx";
+import Personal from "./pages/Personal/Personal.jsx"
 
 function App() {
     const { initializing } = useContext(AuthContext);
@@ -27,7 +28,9 @@ function App() {
                 path="/home"
                 element={
                     <RequireAuth>
-                        <MainLayout><Home /></MainLayout>
+                        <AuthRole allowed={["ADMINISTRADOR", "INVESTIGADOR"]}>
+                            <MainLayout><Home /></MainLayout>
+                        </AuthRole>
                     </RequireAuth>
                 }
             />
@@ -35,7 +38,9 @@ function App() {
                 path="/"
                 element={
                     <RequireAuth>
-                        <MainLayout><Home /></MainLayout>
+                        <AuthRole allowed={["ADMINISTRADOR", "INVESTIGADOR"]}>
+                            <MainLayout><Home /></MainLayout>
+                        </AuthRole>
                     </RequireAuth>
                 }
             />
@@ -55,6 +60,16 @@ function App() {
                     <RequireAuth>
                         <AuthRole allowed={["ADMINISTRADOR"]}>
                             <MainLayout><Investigadores /></MainLayout>
+                        </AuthRole>
+                    </RequireAuth>
+                }
+            />
+            <Route
+                path="/personal"
+                element={
+                    <RequireAuth>
+                        <AuthRole allowed={["ADMINISTRADOR"]}>
+                            <MainLayout><Personal /></MainLayout>
                         </AuthRole>
                     </RequireAuth>
                 }

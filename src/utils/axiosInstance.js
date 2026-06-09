@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE, 
+    baseURL: import.meta.env.VITE_API_BASE,
 });
 
 // Interceptor para añadir token automáticamente
@@ -30,12 +30,13 @@ api.interceptors.response.use(
                     return api.request(error.config);
                 } catch (refreshError) {
                     localStorage.clear();
-                    window.location.href = "/login"; // opcional: redirigir al login
+                    window.location.href = "/login";
                 }
             }
         }
         return Promise.reject(error);
     }
 );
+
 
 export default api;
