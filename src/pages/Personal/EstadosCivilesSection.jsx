@@ -1,61 +1,70 @@
 import { useEffect, useState } from "react";
 import {
-    getRelacionesParentescos,
-    createRelacionParentesco,
-    patchRelacionParentesco,
-    deleteRelacionParentesco
-} from "../../services/";
+    getEstadosCiviles,
+    createEstadoCivil,
+    patchEstadoCivil,
+    deleteEstadoCivil
+} from "../../services";
 import EditableTable from "../../components/EditableTable/EditableTable";
 import ToastMessage from "../../components/ToastMessage/ToastMessage";
 
-export default function ParentescoSection() {
-    const [parentescos, setParentescos] = useState([]);
+export default function EstadosCivilesSection() {
+    const [estadosCiviles, setEstadosCiviles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState(null);
     const [processing, setProcessing] = useState(false);
 
     useEffect(() => {
-        getRelacionesParentescos()
+        getEstadosCiviles()
             .then(data => {
-                setParentescos(data.results || data);
+                setEstadosCiviles(data);
             })
             .finally(() => setLoading(false));
     }, []);
 
     const columns = [
-        { key: "relacion", label: "Relación", rules: { required: true, minLength: 3 } },
+        { key: "estadocivil", label: "Estado Civil", rules: { required: true, minLength: 3 } },
     ];
 
-    const handleEdit = (id, data) => {
+    const handleEdit = async (id, data) => {
         setProcessing(true);
-        patchRelacionParentesco(id, data)
-            .then(() => getRelacionesParentescos().then(res => setParentescos(res.results || res)))
-            .finally(() => {
-                setProcessing(false);
-                setMessage({ text: "Relación editada correctamente ✅", type: "success" });
-            });
+        try {
+            await patchEstadoCivil(id, data);
+            getEstadosCiviles().then(setEstadosCiviles);
+            setMessage({ text: "Estado civil editado correctamente ✅", type: "success" });
+        } catch (error) {
+            setMessage({ text: "Error al editar el estado civil ❌", type: "error" });
+        } finally {
+            setProcessing(false);
+        }
     };
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         setProcessing(true);
-        deleteRelacionParentesco(id)
-            .then(() => getRelacionesParentescos().then(res => setParentescos(res.results || res)))
-            .finally(() => {
-                setProcessing(false);
-                setMessage("Relación eliminada correctamente 🗑️");
-            });
+        try {
+            await deleteEstadoCivil(id);
+            getEstadosCiviles().then(setEstadosCiviles);
+            setMessage({ text: "Estado civil eliminado correctamente 🗑️", type: "success" });
+        } catch (error) {
+            setMessage({ text: "Error al eliminar el estado civil ❌", type: "error" });
+        } finally {
+            setProcessing(false);
+        }
     };
 
     const handleAdd = async (nuevo) => {
         setProcessing(true);
         try {
-            await createRelacionParentesco(nuevo);
-            getRelacionesParentescos().then(res => setParentescos(res.results || res));
-            setMessage("Relación creada correctamente ➕");
+            await createEstadoCivil({ ...nuevo, estado: true });
+            getEstadosCiviles().then(setEstadosCiviles);
+            setMessage({ text: "Estado civil creado correctamente ➕", type: "success" });
+        } catch (error) {
+            setMessage({ text: "Error al crear el estado civil ❌", type: "error" });
         } finally {
             setProcessing(false);
         }
     };
+
 
     if (loading) {
         return (
@@ -69,13 +78,12 @@ export default function ParentescoSection() {
         <div>
             <EditableTable
                 columns={columns}
-                data={Array.isArray(parentescos) ? parentescos.filter(p => p.estado === true) : []}
+                data={Array.isArray(estadosCiviles) ? estadosCiviles.filter(e => e.estado === true) : []}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onAdd={handleAdd}
             />
 
-            {/* Mensaje de acción en curso */}
             {processing && (
                 <ToastMessage
                     message={
@@ -91,7 +99,6 @@ export default function ParentescoSection() {
             )}
 
 
-            {/* Mensajes de éxito/error */}
             {message && (
                 <ToastMessage
                     message={message.text}

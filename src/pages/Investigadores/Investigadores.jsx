@@ -41,12 +41,13 @@ export default function Investigadores() {
     }, []);
 
     const columns = [
-        { key: "primernombre", label: "Nombre" },
-        { key: "primerapellido", label: "Apellido" },
-        { key: "edad", label: "Edad" },
-        { key: "sexo", label: "Sexo" },
+        { key: "primernombre", label: "Nombre", rules: { required: true, minLength: 3 } },
+        { key: "primerapellido", label: "Apellido", rules: { required: true, minLength: 3 } },
+        { key: "edad", label: "Edad", rules: { required: true, min: 1 } },
+        { key: "sexo", label: "Sexo", rules: { required: true } },
         { key: "administradorNombre", label: "Administrador a cargo" }
     ];
+
 
     const handleEdit = (id, data) => {
         setProcessing(true);
@@ -149,16 +150,16 @@ export default function Investigadores() {
 
     // Mapear investigadores con nombre del administrador
     const investigadoresConAdmin = investigadores
-    .filter(inv => inv.estado === true || inv.estado === 1) // solo activos
-    .map(inv => {
-        const admin = administradores.find(a => a.id === inv.administradorid);
-        return {
-            ...inv,
-            administradorNombre: admin
-                ? `${admin.primernombre} ${admin.primerapellido}`
-                : "Sin asignar"
-        };
-    });
+        .filter(inv => inv.estado === true || inv.estado === 1) // solo activos
+        .map(inv => {
+            const admin = administradores.find(a => a.id === inv.administradorid);
+            return {
+                ...inv,
+                administradorNombre: admin
+                    ? `${admin.primernombre} ${admin.primerapellido}`
+                    : "Sin asignar"
+            };
+        });
 
     if (loading) {
         return (
@@ -198,7 +199,6 @@ export default function Investigadores() {
                 data={investigadoresConAdmin}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
-                onAdd={() => setShowModal(true)}
             />
 
             {/* Mensaje de acción en curso */}

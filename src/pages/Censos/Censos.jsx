@@ -1,13 +1,32 @@
 import React, { useEffect, useState } from "react";
 import { getCensos, createCenso, patchCenso, deleteCenso } from "../../services";
 import TiltCard from "../../components/TiltCard/TiltCard.jsx";
+import ConfirmModal from "../../components/ConfirmModal.jsx/ConfirmModal.jsx";
+import ToastMessage from "../../components/ToastMessage/ToastMessage.jsx";
+import ValidatedInput from "../../components/ValidatedInput/ValidatedInput.jsx";
 
 export default function Censos() {
     const [censos, setCensos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [message, setMessage] = useState(null); // mensajes de confirmación
+    const [message, setMessage] = useState(null);
     const [processing, setProcessing] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
+    const [deleteId, setDeleteId] = useState(null);
+    const [submittedCreate, setSubmittedCreate] = useState(false);
+    const [submittedEdit, setSubmittedEdit] = useState(false);
+
+
+    const handleDeleteClick = (id) => {
+        setDeleteId(id);
+        setShowConfirm(true);
+    };
+
+    const confirmDelete = async () => {
+        setShowConfirm(false);
+        await handleDelete(deleteId);
+    };
+
 
     const [formData, setFormData] = useState({
         nombrecenso: "",
@@ -45,20 +64,26 @@ export default function Censos() {
     const handleCreate = async (e) => {
         e.preventDefault();
         setProcessing(true);
+        setSubmittedCreate(true);
+
         if (!formData.nombrecenso || formData.nombrecenso.length < 3) {
-            setMessage({ type: "danger", text: "El nombre debe tener al menos 3 caracteres ❌" });
             setProcessing(false);
             return;
         }
         if (!formData.fechainiciocenso || !formData.fechafincenso) {
-            setMessage({ type: "danger", text: "Debes seleccionar fechas válidas ❌" });
             setProcessing(false);
             return;
         }
+        if (new Date(formData.fechafincenso) < new Date(formData.fechainiciocenso)) {
+            setProcessing(false);
+            return;
+        }
+
         try {
             const nuevo = await createCenso(formData);
             setCensos((prev) => [...prev, nuevo]);
             setFormData({ nombrecenso: "", fechainiciocenso: "", fechafincenso: "" });
+            setSubmittedCreate(false);
             setMessage({ type: "success", text: "Censo creado exitosamente ✅" });
         } catch (err) {
             console.error("Error al crear censo:", err.response?.data || err);
@@ -66,6 +91,7 @@ export default function Censos() {
         }
         setProcessing(false);
     };
+
 
     const handleDelete = async (id) => {
         setProcessing(true);
@@ -98,11 +124,21 @@ export default function Censos() {
 
     const handleEditSave = async (id) => {
         setProcessing(true);
+        setSubmittedEdit(true);
+
         if (!editData.nombrecenso || editData.nombrecenso.length < 3) {
-            setMessage({ type: "danger", text: "El nombre debe tener al menos 3 caracteres ❌" });
             setProcessing(false);
             return;
         }
+        if (!editData.fechainiciocenso || !editData.fechafincenso) {
+            setProcessing(false);
+            return;
+        }
+        if (new Date(editData.fechafincenso) < new Date(editData.fechainiciocenso)) {
+            setProcessing(false);
+            return;
+        }
+
         try {
             const actualizado = await patchCenso(id, editData);
             setCensos((prev) =>
@@ -110,12 +146,11 @@ export default function Censos() {
             );
             setEditId(null);
             setMessage({ type: "success", text: "Censo editado correctamente ✏️" });
-            setProcessing(false);
         } catch (err) {
             console.error("Error al editar censo:", err.response?.data || err);
             setMessage({ type: "danger", text: "Error al editar censo ❌" });
-            setProcessing(false);
         }
+        setProcessing(false);
     };
 
     if (loading) {
@@ -134,65 +169,84 @@ export default function Censos() {
         <div className="container mt-4">
 
             {processing && (
-                <div className="alert alert-warning d-flex align-items-center" role="alert">
-                    <div className="spinner-border spinner-border-sm me-2" role="status"></div>
-                    Procesando acción, por favor espera…
-                </div>
+                <ToastMessage
+                    message={
+                        <div className="d-flex align-items-center">
+                            <div className="spinner-border spinner-border-sm me-2" role="status"></div>
+                            Procesando acción, por favor espera…
+                        </div>
+                    }
+                    type="warning"
+                    autohide={false}
+                    onClose={() => setProcessing(false)}
+                />
             )}
 
             {/* Mensajes de confirmación */}
             {message && (
-                <div className={`alert alert-${message.type} alert-dismissible fade show`} role="alert">
-                    {message.text}
-                    <button type="button" className="btn-close" onClick={() => setMessage(null)}></button>
-                </div>
+                <ToastMessage
+                    message={message.text}
+                    type={message.type}
+                    autohide={true}
+                    delay={3000}
+                    onClose={() => setMessage(null)}
+                />
+            )}
+
+            {showConfirm && (
+                <ConfirmModal
+                    show={showConfirm}
+                    title="Confirmar eliminación"
+                    message="¿Seguro que deseas desactivar este censo?"
+                    onConfirm={confirmDelete}
+                    onCancel={() => setShowConfirm(false)}
+                />
             )}
 
             {/* Formulario de creación arriba */}
             <h3 className="fw-bold">Crear nuevo censo</h3>
-            <form onSubmit={handleCreate} className="row g-3 mb-4 needs-validation" noValidate>
+            <form onSubmit={handleCreate} className="row g-3 mb-4">
                 <div className="col-md-6">
                     <label className="form-label">Nombre</label>
-                    <input
+                    <ValidatedInput
                         type="text"
-                        name="nombrecenso"
                         value={formData.nombrecenso}
-                        onChange={handleChange}
-                        className="form-control"
-                        required
-                        minLength={3}
+                        onChange={(val) => setFormData(prev => ({ ...prev, nombrecenso: val }))}
+                        error={
+                            submittedCreate && (!formData.nombrecenso || formData.nombrecenso.length < 3)
+                                ? "El nombre debe tener al menos 3 caracteres"
+                                : ""
+                        }
                     />
-                    <div className="invalid-feedback">
-                        El nombre del censo debe tener al menos 3 caracteres.
-                    </div>
+
                 </div>
                 <div className="col-md-3">
                     <label className="form-label">Inicio</label>
-                    <input
+                    <ValidatedInput
                         type="date"
-                        name="fechainiciocenso"
                         value={formData.fechainiciocenso}
-                        onChange={handleChange}
-                        className="form-control"
-                        required
+                        onChange={(val) => setFormData(prev => ({ ...prev, fechainiciocenso: val }))}
+                        error={
+                            submittedCreate && !formData.fechainiciocenso
+                                ? "Selecciona una fecha de inicio válida"
+                                : ""
+                        }
                     />
-                    <div className="invalid-feedback">
-                        Selecciona una fecha de inicio válida.
-                    </div>
                 </div>
                 <div className="col-md-3">
                     <label className="form-label">Fin</label>
-                    <input
+                    <ValidatedInput
                         type="date"
-                        name="fechafincenso"
                         value={formData.fechafincenso}
-                        onChange={handleChange}
-                        className="form-control"
-                        required
+                        onChange={(val) => setFormData(prev => ({ ...prev, fechafincenso: val }))}
+                        error={
+                            submittedCreate && !formData.fechafincenso
+                                ? "Selecciona una fecha de finalización válida"
+                                : submittedCreate && new Date(formData.fechafincenso) < new Date(formData.fechainiciocenso)
+                                    ? "La fecha de fin no puede ser anterior a la de inicio"
+                                    : ""
+                        }
                     />
-                    <div className="invalid-feedback">
-                        Selecciona una fecha de finalización válida.
-                    </div>
                 </div>
                 <div className="col-12">
                     <button type="submit" className="btn btn-brand w-100">
@@ -212,30 +266,38 @@ export default function Censos() {
                                 <div className="card-body">
                                     {editId === censo.id ? (
                                         <>
-                                            <input
+                                            <ValidatedInput
                                                 type="text"
-                                                name="nombrecenso"
                                                 value={editData.nombrecenso}
-                                                onChange={handleEditChange}
-                                                className="form-control mb-2"
-                                                required
-                                                minLength={3}
+                                                onChange={(val) => setEditData(prev => ({ ...prev, nombrecenso: val }))}
+                                                error={
+                                                    submittedEdit && (!editData.nombrecenso || editData.nombrecenso.length < 3)
+                                                        ? "El nombre debe tener al menos 3 caracteres"
+                                                        : ""
+                                                }
                                             />
-                                            <input
+
+                                            <ValidatedInput
                                                 type="date"
-                                                name="fechainiciocenso"
                                                 value={editData.fechainiciocenso}
-                                                onChange={handleEditChange}
-                                                className="form-control mb-2"
-                                                required
+                                                onChange={(val) => setEditData(prev => ({ ...prev, fechainiciocenso: val }))}
+                                                error={
+                                                    submittedEdit && !editData.fechainiciocenso
+                                                        ? "Selecciona una fecha de inicio válida"
+                                                        : ""
+                                                }
                                             />
-                                            <input
+                                            <ValidatedInput
                                                 type="date"
-                                                name="fechafincenso"
                                                 value={editData.fechafincenso}
-                                                onChange={handleEditChange}
-                                                className="form-control mb-2"
-                                                required
+                                                onChange={(val) => setEditData(prev => ({ ...prev, fechafincenso: val }))}
+                                                error={
+                                                    submittedEdit && !editData.fechafincenso
+                                                        ? "Selecciona una fecha de finalización válida"
+                                                        : submittedEdit && new Date(editData.fechafincenso) < new Date(editData.fechainiciocenso)
+                                                            ? "La fecha de fin no puede ser anterior a la de inicio"
+                                                            : ""
+                                                }
                                             />
                                             <button
                                                 className="btn btn-sm btn-success me-2"
@@ -272,7 +334,10 @@ export default function Censos() {
                                             </button>
                                             <button
                                                 className="btn btn-sm btn-outline-danger"
-                                                onClick={() => handleDelete(censo.id)}
+                                                onClick={() => {
+                                                    setDeleteId(censo.id);
+                                                    setShowConfirm(true);
+                                                }}
                                             >
                                                 Desactivar
                                             </button>

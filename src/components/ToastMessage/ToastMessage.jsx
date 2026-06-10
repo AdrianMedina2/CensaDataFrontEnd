@@ -13,13 +13,15 @@ export default function ToastMessage({ message, type = "info", autohide = true, 
     if (!message) return null;
 
     const bgClass =
-        type === "success" ? "bg-success text-white" :
-            type === "error" ? "bg-danger text-white" :
-                type === "warning" ? "bg-warning text-dark" :
-                    "bg-info text-white";
+    type === "success" ? "bg-success text-white" :
+    type === "error" ? "bg-danger text-white" :
+    type === "danger" ? "bg-danger text-white" :
+    type === "warning" ? "bg-warning text-dark" :
+    "bg-info text-white";
+
 
     return (
-        <div className="toast-container position-fixed bottom-0 end-0 p-3">
+        <div className="toast-container position-fixed bottom-0 end-0 p-3 fade-in fast">
             <div className={`toast show ${bgClass}`}>
                 <div className="toast-body d-flex justify-content-between align-items-center">
                     {message}
