@@ -203,6 +203,7 @@ export default function Censos() {
                 />
             )}
 
+            <h2 className="fw-bold mb-4">Gestionar Censos</h2>
             {/* Formulario de creación arriba */}
             <h3 className="fw-bold">Crear nuevo censo</h3>
             <form onSubmit={handleCreate} className="row g-3 mb-4">

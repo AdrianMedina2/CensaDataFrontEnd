@@ -11,6 +11,7 @@ import Censos from "./pages/Censos/Censos.jsx";
 import AuthRole from "./components/Auth/AuthRole.jsx";
 import Investigadores from "./pages/Investigadores/Investigadores.jsx";
 import Personal from "./pages/Personal/Personal.jsx"
+import Ubicaciones from "./pages/Ubicaciones/Ubicaciones.jsx";
 
 function App() {
     const { initializing } = useContext(AuthContext);
@@ -70,6 +71,16 @@ function App() {
                     <RequireAuth>
                         <AuthRole allowed={["ADMINISTRADOR"]}>
                             <MainLayout><Personal /></MainLayout>
+                        </AuthRole>
+                    </RequireAuth>
+                }
+            />
+            <Route
+                path="/ubicaciones"
+                element={
+                    <RequireAuth>
+                        <AuthRole allowed={["ADMINISTRADOR"]}>
+                            <MainLayout><Ubicaciones /></MainLayout>
                         </AuthRole>
                     </RequireAuth>
                 }

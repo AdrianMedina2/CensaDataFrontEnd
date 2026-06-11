@@ -32,125 +32,142 @@ export default function Investigadores() {
     });
 
     useEffect(() => {
-        Promise.all([getInvestigadores(), getAdministradores()])
-            .then(([investigadoresData, administradoresData]) => {
-                setInvestigadores(investigadoresData);
-                setAdministradores(administradoresData);
-            })
-            .finally(() => setLoading(false));
-    }, []);
+    Promise.all([getInvestigadores(), getAdministradores()])
+        .then(([investigadoresRes, administradoresRes]) => {
+            setInvestigadores(Array.isArray(investigadoresRes.data) ? investigadoresRes.data : []);
+            setAdministradores(Array.isArray(administradoresRes.data) ? administradoresRes.data : []);
+        })
+        .finally(() => setLoading(false));
+}, []);
 
     const columns = [
         { key: "primernombre", label: "Nombre", rules: { required: true, minLength: 3 } },
         { key: "primerapellido", label: "Apellido", rules: { required: true, minLength: 3 } },
         { key: "edad", label: "Edad", rules: { required: true, min: 1 } },
         { key: "sexo", label: "Sexo", rules: { required: true } },
-        { key: "administradorNombre", label: "Administrador a cargo" }
+        {
+            key: "administradorid",
+            label: "Administrador a cargo",
+            type: "select",
+            options: administradores.map(a => ({
+                value: a.id,
+                label: `${a.primernombre} ${a.primerapellido}`
+            })),
+            rules: { required: true },
+            render: (row) => {
+                const admin = administradores.find(a => a.id === row.administradorid);
+                return admin ? `${admin.primernombre} ${admin.primerapellido}` : "Sin asignar";
+            }
+        }
     ];
 
 
+
     const handleEdit = (id, data) => {
-        setProcessing(true);
-        patchInvestigador(id, data)
-            .then(() => getInvestigadores().then(setInvestigadores))
-            .finally(() => {
-                setProcessing(false);
-                setMessage("Investigador editado correctamente ✅");
-            });
-    };
+    setProcessing(true);
+    patchInvestigador(id, data)
+        .then(() => getInvestigadores().then(res => setInvestigadores(res.data)))
+        .finally(() => {
+            setProcessing(false);
+            setMessage("Investigador editado correctamente ✅");
+        });
+};
 
     const handleDelete = (id) => {
-        setProcessing(true);
-        deleteInvestigador(id)
-            .then(() => getInvestigadores().then(setInvestigadores))
-            .finally(() => {
-                setProcessing(false);
-                setMessage("Investigador eliminado correctamente 🗑️");
-            });
-    };
+    setProcessing(true);
+    deleteInvestigador(id)
+        .then(() => getInvestigadores().then(res => setInvestigadores(res.data)))
+        .finally(() => {
+            setProcessing(false);
+            setMessage("Investigador eliminado correctamente 🗑️");
+        });
+};
 
     const handleAdd = async (e) => {
-        e.preventDefault();
-        setValidated(true);
+    e.preventDefault();
+    setValidated(true);
 
-        const invalids = [];
-        if (formData.usuario.length < 3) invalids.push("usuario");
-        if (!formData.correo.includes("@")) invalids.push("correo");
-        if (formData.password.length < 8) invalids.push("password");
-        if (formData.primernombre.length < 3) invalids.push("primernombre");
-        if (formData.primerapellido.length < 3) invalids.push("primerapellido");
-        if (parseInt(formData.edad) <= 0) invalids.push("edad");
-        if (!formData.administradorid) invalids.push("administradorid");
-        if (!formData.sexo) invalids.push("sexo");
+    const invalids = [];
+    if (formData.usuario.length < 3) invalids.push("usuario");
+    if (!formData.correo.includes("@")) invalids.push("correo");
+    if (formData.password.length < 8) invalids.push("password");
+    if (formData.primernombre.length < 3) invalids.push("primernombre");
+    if (formData.primerapellido.length < 3) invalids.push("primerapellido");
+    if (parseInt(formData.edad) <= 0) invalids.push("edad");
+    if (!formData.administradorid) invalids.push("administradorid");
+    if (!formData.sexo) invalids.push("sexo");
 
-        if (invalids.length > 0) {
-            setShakeFields(invalids);
-            setTimeout(() => setShakeFields([]), 500);
-            return;
-        }
+    if (invalids.length > 0) {
+        setShakeFields(invalids);
+        setTimeout(() => setShakeFields([]), 500);
+        return;
+    }
 
-        setProcessing(true);
-        try {
-            setShowModal(false); //cerrar modal apenas se envía
+    setProcessing(true);
+    try {
+        setShowModal(false);
 
-            const cuenta = await createCuenta({
-                usuario: formData.usuario,
-                password: formData.password,
-                Role: "INVESTIGADOR",
-                Correo: formData.correo,
-            });
+        const cuentaRes = await createCuenta({
+            usuario: formData.usuario,
+            password: formData.password,
+            Role: "INVESTIGADOR",
+            Correo: formData.correo,
+        });
 
-            const nuevo = {
-                primernombre: formData.primernombre,
-                segundonombre: formData.segundonombre || null,
-                primerapellido: formData.primerapellido,
-                segundoapellido: formData.segundoapellido || null,
-                edad: parseInt(formData.edad),
-                sexo: formData.sexo,
-                estado: true,
-                cuentaid: cuenta.id,
-                administradorid: parseInt(formData.administradorid),
-            };
+        const cuenta = cuentaRes.data;
 
-            await createInvestigador(nuevo);
-            getInvestigadores().then(setInvestigadores);
-            setMessage("Investigador creado correctamente ➕");
+        const nuevo = {
+            primernombre: formData.primernombre,
+            segundonombre: formData.segundonombre || null,
+            primerapellido: formData.primerapellido,
+            segundoapellido: formData.segundoapellido || null,
+            edad: parseInt(formData.edad),
+            sexo: formData.sexo,
+            estado: true,
+            cuentaid: cuenta.id, 
+            administradorid: parseInt(formData.administradorid),
+        };
 
-            setValidated(false);
-        } catch (err) {
-            if (err.response && err.response.data) {
-                // Captura errores específicos del backend
-                const data = err.response.data;
-                if (data.Correo) {
-                    setMessage(data.Correo[0]); // Ej: "Este correo ya está en uso."
-                } else if (data.usuario) {
-                    setMessage(data.usuario[0]); // Ej: "Usuario ya existe."
-                } else {
-                    setMessage("Error al crear investigador ❌");
-                }
+        await createInvestigador(nuevo);
+        getInvestigadores().then(res => setInvestigadores(res.data));
+        setMessage("Investigador creado correctamente ➕");
+
+        setValidated(false);
+    } catch (err) {
+        if (err.response && err.response.data) {
+            const data = err.response.data;
+            if (data.Correo) {
+                setMessage(data.Correo[0]);
+            } else if (data.usuario) {
+                setMessage(data.usuario[0]);
             } else {
-                console.error(err);
-                setMessage("Error desconocido ❌");
+                setMessage("Error al crear investigador ❌");
             }
-        } finally {
-            setProcessing(false);
-            setValidated(false);
-            setFormData({
-                usuario: "",
-                correo: "",
-                password: "",
-                primernombre: "",
-                primerapellido: "",
-                edad: "",
-                sexo: "",
-                administradorid: ""
-            });
+        } else {
+            console.error(err);
+            setMessage("Error desconocido ❌");
         }
-    };
+    } finally {
+        setProcessing(false);
+        setValidated(false);
+        setFormData({
+            usuario: "",
+            correo: "",
+            password: "",
+            primernombre: "",
+            primerapellido: "",
+            edad: "",
+            sexo: "",
+            administradorid: ""
+        });
+    }
+};
 
-    // Mapear investigadores con nombre del administrador
-    const investigadoresConAdmin = investigadores
-        .filter(inv => inv.estado === true || inv.estado === 1) // solo activos
+// Mapear investigadores con nombre del administrador
+const investigadoresConAdmin = Array.isArray(investigadores)
+    ? investigadores
+        .filter(inv => inv.estado === true || inv.estado === 1)
+        .sort((a, b) => b.id - a.id)
         .map(inv => {
             const admin = administradores.find(a => a.id === inv.administradorid);
             return {
@@ -159,7 +176,8 @@ export default function Investigadores() {
                     ? `${admin.primernombre} ${admin.primerapellido}`
                     : "Sin asignar"
             };
-        });
+        })
+    : [];
 
     if (loading) {
         return (
@@ -171,6 +189,7 @@ export default function Investigadores() {
 
     return (
         <div>
+            <h2 className="fw-bold mb-4">Gestionar investigadores</h2>
             <button
                 className="btn btn-brand mb-3"
                 onClick={() => {

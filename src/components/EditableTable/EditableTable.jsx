@@ -126,13 +126,29 @@ export default function EditableTable({ columns, data, onEdit, onDelete, onAdd }
                                 {columns.map((col) => (
                                     <div key={col.key} className="mb-2">
                                         <strong>{col.label}:</strong>
-                                        <ValidatedInput
-                                            value={newRow[col.key] || ""}
-                                            onChange={(val) => handleNewChange(col.key, val)}
-                                            error={invalidCreateFields.find(f => f.key === col.key)?.msg}
-                                        />
+                                        {col.type === "select" ? (
+                                            <select
+                                                className="form-select"
+                                                value={newRow[col.key] || ""}
+                                                onChange={(e) => handleNewChange(col.key, e.target.value)}
+                                            >
+                                                <option value="">Seleccione...</option>
+                                                {col.options?.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <ValidatedInput
+                                                value={newRow[col.key] || ""}
+                                                onChange={(val) => handleNewChange(col.key, val)}
+                                                error={invalidCreateFields.find(f => f.key === col.key)?.msg}
+                                            />
+                                        )}
                                     </div>
                                 ))}
+
                                 <button
                                     className="btn btn-success btn-sm"
                                     onClick={saveNew}
@@ -149,16 +165,32 @@ export default function EditableTable({ columns, data, onEdit, onDelete, onAdd }
                                     <div key={col.key}>
                                         <strong>{col.label}:</strong>{" "}
                                         {editingRow === row.id ? (
-                                            <ValidatedInput
-                                                value={formData[col.key] || ""}
-                                                onChange={(val) => handleChange(col.key, val)}
-                                                error={invalidEditFields.find(f => f.key === col.key)?.msg}
-                                            />
+                                            col.type === "select" ? (
+                                                <select
+                                                    className="form-select"
+                                                    value={formData[col.key] || ""}
+                                                    onChange={(e) => handleChange(col.key, e.target.value)}
+                                                >
+                                                    <option value="">Seleccione...</option>
+                                                    {col.options?.map(opt => (
+                                                        <option key={opt.value} value={opt.value}>
+                                                            {opt.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            ) : (
+                                                <ValidatedInput
+                                                    value={formData[col.key] || ""}
+                                                    onChange={(val) => handleChange(col.key, val)}
+                                                    error={invalidEditFields.find(f => f.key === col.key)?.msg}
+                                                />
+                                            )
                                         ) : (
-                                            row[col.key]
+                                            col.render ? col.render(row) : row[col.key]
                                         )}
                                     </div>
                                 ))}
+
                                 {editingRow === row.id ? (
                                     <>
                                         <button
@@ -211,11 +243,26 @@ export default function EditableTable({ columns, data, onEdit, onDelete, onAdd }
                                 <tr>
                                     {columns.map(col => (
                                         <td key={col.key}>
-                                            <ValidatedInput
-                                                value={newRow[col.key] || ""}
-                                                onChange={(val) => handleNewChange(col.key, val)}
-                                                error={invalidCreateFields.find(f => f.key === col.key)?.msg}
-                                            />
+                                            {col.type === "select" ? (
+                                                <select
+                                                    className="form-select"
+                                                    value={newRow[col.key] || ""}
+                                                    onChange={(e) => handleNewChange(col.key, e.target.value)}
+                                                >
+                                                    <option value="">Seleccione...</option>
+                                                    {col.options?.map(opt => (
+                                                        <option key={opt.value} value={opt.value}>
+                                                            {opt.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            ) : (
+                                                <ValidatedInput
+                                                    value={newRow[col.key] || ""}
+                                                    onChange={(val) => handleNewChange(col.key, val)}
+                                                    error={invalidCreateFields.find(f => f.key === col.key)?.msg}
+                                                />
+                                            )}
                                         </td>
                                     ))}
                                     <td>
@@ -228,23 +275,37 @@ export default function EditableTable({ columns, data, onEdit, onDelete, onAdd }
                                     </td>
                                 </tr>
                             )}
-
                             {filteredData.map((row) => (
                                 <tr key={row.id}>
                                     {columns.map((col) => (
                                         <td key={col.key}>
                                             {editingRow === row.id ? (
-                                                <ValidatedInput
-                                                    value={formData[col.key] || ""}
-                                                    onChange={(val) => handleChange(col.key, val)}
-                                                    error={invalidEditFields.find(f => f.key === col.key)?.msg}
-                                                />
-
+                                                col.type === "select" ? (
+                                                    <select
+                                                        className="form-select"
+                                                        value={formData[col.key] || ""}
+                                                        onChange={(e) => handleChange(col.key, e.target.value)}
+                                                    >
+                                                        <option value="">Seleccione...</option>
+                                                        {col.options?.map(opt => (
+                                                            <option key={opt.value} value={opt.value}>
+                                                                {opt.label}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                ) : (
+                                                    <ValidatedInput
+                                                        value={formData[col.key] || ""}
+                                                        onChange={(val) => handleChange(col.key, val)}
+                                                        error={invalidEditFields.find(f => f.key === col.key)?.msg}
+                                                    />
+                                                )
                                             ) : (
-                                                row[col.key]
+                                                col.render ? col.render(row) : row[col.key]
                                             )}
                                         </td>
                                     ))}
+
                                     <td>
                                         {editingRow === row.id ? (
                                             <>

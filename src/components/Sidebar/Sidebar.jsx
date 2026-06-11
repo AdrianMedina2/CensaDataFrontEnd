@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { Offcanvas } from "bootstrap";
 import "./Sidebar.css";
@@ -45,7 +45,6 @@ export default function SidebarMenu() {
 
         const updateLogoVisibility = () => {
             const navRect = navbar.getBoundingClientRect();
-            // mostrar logo en sidebar solo cuando la navbar está fuera de vista
             if (navRect.bottom <= 0) {
                 sidebarLogo.style.opacity = '1';
                 sidebarLogo.style.pointerEvents = 'auto';
@@ -72,38 +71,89 @@ export default function SidebarMenu() {
     }, []);
 
     const commonLinks = (
-        <Link className="nav-link fs-5 text-white" to="/home" onClick={handleNavClick}>
-            <i className="bi bi-house-fill me-2" aria-hidden="true"></i> Home
-        </Link>
-
+        <NavLink to="/home" className="nav-link fs-5 text-white" onClick={handleNavClick}>
+            {({ isActive }) => (
+                <>
+                    <i className={`bi ${isActive ? "bi-house-fill" : "bi-house"} me-2`}></i>
+                    Home
+                </>
+            )}
+        </NavLink>
     );
 
     const adminLinks = (
         <>
-            <Link className="nav-link fs-5 text-white" to="/dashboard" onClick={handleNavClick}>
-                <i className="bi bi-speedometer2 me-2" aria-hidden="true"></i> Dashboard
-            </Link>
-            <Link className="nav-link fs-5 text-white" to="/censos" onClick={handleNavClick}>
-                <i className="bi bi-folder me-2" aria-hidden="true"></i> Censos
-            </Link>
-            <Link className="nav-link fs-5 text-white" to="/investigadores" onClick={handleNavClick}>
-                <i className="bi bi-person-badge me-2" aria-hidden="true"></i> Investigadores
-            </Link>
-            <Link className="nav-link fs-5 text-white" to="/personal" onClick={handleNavClick}>
-                <i className="bi bi-person" aria-hidden="true"></i> Personal
-            </Link>
+            <div className="sidebar-section">
+                <h6 className="sidebar-section-title">General</h6>
+                <NavLink to="/dashboard" className="nav-link fs-5 text-white" onClick={handleNavClick}>
+                    {({ isActive }) => (
+                        <>
+                            <i className={`bi ${isActive ? "bi-speedometer2" : "bi-speedometer"} me-2`}></i>
+                            Dashboard
+                        </>
+                    )}
+                </NavLink>
+                <NavLink to="/censos" className="nav-link fs-5 text-white" onClick={handleNavClick}>
+                    {({ isActive }) => (
+                        <>
+                            <i className={`bi ${isActive ? "bi-folder-fill" : "bi-folder"} me-2`}></i>
+                            Censos
+                        </>
+                    )}
+                </NavLink>
+            </div>
 
+            <div className="sidebar-section">
+                <h6 className="sidebar-section-title">Gestión</h6>
+                <NavLink to="/investigadores" className="nav-link fs-5 text-white" onClick={handleNavClick}>
+                    {({ isActive }) => (
+                        <>
+                            <i className={`bi ${isActive ? "bi-person-badge-fill" : "bi-person-badge"} me-2`}></i>
+                            Investigadores
+                        </>
+                    )}
+                </NavLink>
+                <NavLink to="/personal" className="nav-link fs-5 text-white" onClick={handleNavClick}>
+                    {({ isActive }) => (
+                        <>
+                            <i className={`bi ${isActive ? "bi-person-fill" : "bi-person"} me-2`}></i>
+                            Personal
+                        </>
+                    )}
+                </NavLink>
+                <NavLink to="/ubicaciones" className="nav-link fs-5 text-white" onClick={handleNavClick}>
+                    {({ isActive }) => (
+                        <>
+                            <i className={`bi ${isActive ? "bi-geo-alt-fill" : "bi-geo-alt"} me-2`}></i>
+                            Ubicaciones
+                        </>
+                    )}
+                </NavLink>
+            </div>
         </>
     );
 
     const investigadorLinks = (
         <>
-            <Link className="nav-link fs-5 text-white" to="/proyectos" onClick={handleNavClick}>
-                <i className="bi bi-folder me-2" aria-hidden="true"></i> Mis Proyectos
-            </Link>
-            <Link className="nav-link fs-5 text-white" to="/reportes" onClick={handleNavClick}>
-                <i className="bi bi-bar-chart me-2" aria-hidden="true"></i> Mis Reportes
-            </Link>
+            <div className="sidebar-section">
+                <h6 className="text-uppercase text-muted px-3 mt-3 mb-2">Trabajo</h6>
+                <NavLink to="/proyectos" className="nav-link fs-5 text-white" onClick={handleNavClick}>
+                    {({ isActive }) => (
+                        <>
+                            <i className={`bi ${isActive ? "bi-folder-fill" : "bi-folder"} me-2`}></i>
+                            Mis Proyectos
+                        </>
+                    )}
+                </NavLink>
+                <NavLink to="/reportes" className="nav-link fs-5 text-white" onClick={handleNavClick}>
+                    {({ isActive }) => (
+                        <>
+                            <i className={`bi ${isActive ? "bi-bar-chart-fill" : "bi-bar-chart"} me-2`}></i>
+                            Mis Reportes
+                        </>
+                    )}
+                </NavLink>
+            </div>
         </>
     );
 
@@ -112,10 +162,9 @@ export default function SidebarMenu() {
             {/* Sidebar fijo en escritorio */}
             <aside className="d-none d-md-block bg-brand sidebar" aria-label="Sidebar">
                 <div className="sidebar-logo-wrapper">
-                    <Link to="/home" className="logo-link">
+                    <NavLink to="/home" className="logo-link">
                         <img src="/CensaDataWhite.png" alt="Logo" className="sidebar-logo me-3" />
-                    </Link>
-
+                    </NavLink>
                 </div>
                 <nav className="nav flex-column sidebar-inner">
                     {commonLinks}
@@ -123,7 +172,6 @@ export default function SidebarMenu() {
                     {role === "INVESTIGADOR" && investigadorLinks}
                 </nav>
             </aside>
-
 
             {/* Offcanvas en móvil */}
             <div className="offcanvas offcanvas-start" tabIndex="-1" id="sidebarOffcanvas">
