@@ -4,7 +4,7 @@ import {
     createDepartamento,
     patchDepartamento,
     deleteDepartamento
-} from "../../services/"
+} from "../../services/";
 import EditableTable from "../../components/EditableTable/EditableTable";
 import ToastMessage from "../../components/ToastMessage/ToastMessage";
 
@@ -17,12 +17,10 @@ export default function DepartamentosSection() {
     useEffect(() => {
         getDepartamentos()
             .then(res => {
-                console.log("Departamentos:", res.data);
-                setDepartamentos(res.data);
+                setDepartamentos(Array.isArray(res.data) ? res.data : []);
             })
             .finally(() => setLoading(false));
     }, []);
-
 
     const columns = [
         { key: "nombre", label: "Departamento", rules: { required: true, minLength: 3 } },
@@ -31,7 +29,11 @@ export default function DepartamentosSection() {
     const handleEdit = (id, data) => {
         setProcessing(true);
         patchDepartamento(id, data)
-            .then(() => getDepartamentos().then(setDepartamentos))
+            .then(() =>
+                getDepartamentos().then(res =>
+                    setDepartamentos(Array.isArray(res.data) ? res.data : [])
+                )
+            )
             .finally(() => {
                 setProcessing(false);
                 setMessage({ text: "Departamento editado correctamente ✅", type: "success" });
@@ -41,7 +43,11 @@ export default function DepartamentosSection() {
     const handleDelete = (id) => {
         setProcessing(true);
         deleteDepartamento(id)
-            .then(() => getDepartamentos().then(setDepartamentos))
+            .then(() =>
+                getDepartamentos().then(res =>
+                    setDepartamentos(Array.isArray(res.data) ? res.data : [])
+                )
+            )
             .finally(() => {
                 setProcessing(false);
                 setMessage({ text: "Departamento eliminado correctamente 🗑️", type: "warning" });
@@ -52,7 +58,9 @@ export default function DepartamentosSection() {
         setProcessing(true);
         try {
             await createDepartamento({ ...nuevo, cantidadmunicipios: 0, estado: true });
-            getDepartamentos().then(setDepartamentos);
+            getDepartamentos().then(res =>
+                setDepartamentos(Array.isArray(res.data) ? res.data : [])
+            );
             setMessage({ text: "Departamento creado correctamente ➕", type: "success" });
         } catch (error) {
             setMessage({ text: "Error al crear el departamento ❌", type: "danger" });
@@ -61,9 +69,9 @@ export default function DepartamentosSection() {
         }
     };
 
-    const departamentosActivos = departamentos
-        .filter(d => d.estado === true || d.estado === 1)
-        .sort((a, b) => b.id - a.id)
+    const departamentosActivos = Array.isArray(departamentos)
+    ? departamentos.sort((a, b) => b.id - a.id)
+    : [];
 
 
     if (loading) {
@@ -78,11 +86,12 @@ export default function DepartamentosSection() {
         <div>
             <EditableTable
                 columns={columns}
-                data={Array.isArray(departamentosActivos) ? departamentosActivos : []}
+                data={departamentosActivos}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onAdd={handleAdd}
             />
+
 
             {processing && (
                 <ToastMessage

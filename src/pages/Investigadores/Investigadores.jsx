@@ -5,10 +5,11 @@ import {
     deleteInvestigador,
     createInvestigador,
     createCuenta,
-    getAdministradores
+    getAdministradores,
+    getCuentas
 } from "../../services";
 import EditableTable from "../../components/EditableTable/EditableTable";
-import ToastMessage from "../../components/ToastMessage/ToastMessage"
+import ToastMessage from "../../components/ToastMessage/ToastMessage";
 
 export default function Investigadores() {
     const [investigadores, setInvestigadores] = useState([]);
@@ -32,13 +33,14 @@ export default function Investigadores() {
     });
 
     useEffect(() => {
-    Promise.all([getInvestigadores(), getAdministradores()])
-        .then(([investigadoresRes, administradoresRes]) => {
-            setInvestigadores(Array.isArray(investigadoresRes.data) ? investigadoresRes.data : []);
-            setAdministradores(Array.isArray(administradoresRes.data) ? administradoresRes.data : []);
-        })
-        .finally(() => setLoading(false));
-}, []);
+        Promise.all([getInvestigadores(), getAdministradores()])
+            .then(([investigadoresRes, administradoresRes]) => {
+                console.log("Investigadores cargados:", investigadoresRes);
+                setInvestigadores(Array.isArray(investigadoresRes.data) ? investigadoresRes.data : []);
+                setAdministradores(Array.isArray(administradoresRes.data) ? administradoresRes.data : []);
+            })
+            .finally(() => setLoading(false));
+    }, []);
 
     const columns = [
         { key: "primernombre", label: "Nombre", rules: { required: true, minLength: 3 } },
@@ -61,123 +63,136 @@ export default function Investigadores() {
         }
     ];
 
-
-
     const handleEdit = (id, data) => {
-    setProcessing(true);
-    patchInvestigador(id, data)
-        .then(() => getInvestigadores().then(res => setInvestigadores(res.data)))
-        .finally(() => {
-            setProcessing(false);
-            setMessage("Investigador editado correctamente ✅");
-        });
-};
+        setProcessing(true);
+        patchInvestigador(id, data)
+            .then(() => getInvestigadores().then(res =>
+                setInvestigadores(Array.isArray(res.data) ? res.data : [])
+            ))
+            .finally(() => {
+                setProcessing(false);
+                setMessage({ text: "Investigador editado correctamente ✅", type: "success" });
+            });
+    };
+
 
     const handleDelete = (id) => {
-    setProcessing(true);
-    deleteInvestigador(id)
-        .then(() => getInvestigadores().then(res => setInvestigadores(res.data)))
-        .finally(() => {
-            setProcessing(false);
-            setMessage("Investigador eliminado correctamente 🗑️");
-        });
-};
+        setProcessing(true);
+        deleteInvestigador(id)
+            .then(() => getInvestigadores().then(res =>
+                setInvestigadores(Array.isArray(res.data) ? res.data : [])
+            ))
+            .finally(() => {
+                setProcessing(false);
+                setMessage({ text: "Investigador eliminado correctamente 🗑️", type: "warning" });
+            });
+    };
 
     const handleAdd = async (e) => {
-    e.preventDefault();
-    setValidated(true);
+        e.preventDefault();
+        setValidated(true);
 
-    const invalids = [];
-    if (formData.usuario.length < 3) invalids.push("usuario");
-    if (!formData.correo.includes("@")) invalids.push("correo");
-    if (formData.password.length < 8) invalids.push("password");
-    if (formData.primernombre.length < 3) invalids.push("primernombre");
-    if (formData.primerapellido.length < 3) invalids.push("primerapellido");
-    if (parseInt(formData.edad) <= 0) invalids.push("edad");
-    if (!formData.administradorid) invalids.push("administradorid");
-    if (!formData.sexo) invalids.push("sexo");
+        const invalids = [];
+        if (formData.usuario.length < 3) invalids.push("usuario");
+        if (!formData.correo.includes("@")) invalids.push("correo");
+        if (formData.password.length < 8) invalids.push("password");
+        if (formData.primernombre.length < 3) invalids.push("primernombre");
+        if (formData.primerapellido.length < 3) invalids.push("primerapellido");
+        if (parseInt(formData.edad) <= 0) invalids.push("edad");
+        if (!formData.administradorid) invalids.push("administradorid");
+        if (!formData.sexo) invalids.push("sexo");
 
-    if (invalids.length > 0) {
-        setShakeFields(invalids);
-        setTimeout(() => setShakeFields([]), 500);
-        return;
-    }
-
-    setProcessing(true);
-    try {
-        setShowModal(false);
-
-        const cuentaRes = await createCuenta({
-            usuario: formData.usuario,
-            password: formData.password,
-            Role: "INVESTIGADOR",
-            Correo: formData.correo,
-        });
-
-        const cuenta = cuentaRes.data;
-
-        const nuevo = {
-            primernombre: formData.primernombre,
-            segundonombre: formData.segundonombre || null,
-            primerapellido: formData.primerapellido,
-            segundoapellido: formData.segundoapellido || null,
-            edad: parseInt(formData.edad),
-            sexo: formData.sexo,
-            estado: true,
-            cuentaid: cuenta.id, 
-            administradorid: parseInt(formData.administradorid),
-        };
-
-        await createInvestigador(nuevo);
-        getInvestigadores().then(res => setInvestigadores(res.data));
-        setMessage("Investigador creado correctamente ➕");
-
-        setValidated(false);
-    } catch (err) {
-        if (err.response && err.response.data) {
-            const data = err.response.data;
-            if (data.Correo) {
-                setMessage(data.Correo[0]);
-            } else if (data.usuario) {
-                setMessage(data.usuario[0]);
-            } else {
-                setMessage("Error al crear investigador ❌");
-            }
-        } else {
-            console.error(err);
-            setMessage("Error desconocido ❌");
+        if (invalids.length > 0) {
+            setShakeFields(invalids);
+            setTimeout(() => setShakeFields([]), 500);
+            return;
         }
-    } finally {
-        setProcessing(false);
-        setValidated(false);
-        setFormData({
-            usuario: "",
-            correo: "",
-            password: "",
-            primernombre: "",
-            primerapellido: "",
-            edad: "",
-            sexo: "",
-            administradorid: ""
-        });
-    }
-};
 
-// Mapear investigadores con nombre del administrador
-const investigadoresConAdmin = Array.isArray(investigadores)
-    ? investigadores
-        .filter(inv => inv.estado === true || inv.estado === 1)
-        .sort((a, b) => b.id - a.id)
-        .map(inv => {
-            const admin = administradores.find(a => a.id === inv.administradorid);
-            return {
-                ...inv,
-                administradorNombre: admin
-                    ? `${admin.primernombre} ${admin.primerapellido}`
-                    : "Sin asignar"
+        setProcessing(true);
+        try {
+            setShowModal(false);
+
+            const cuentaRes = await createCuenta({
+                usuario: formData.usuario,
+                password: formData.password,
+                Role: "INVESTIGADOR",
+                Correo: formData.correo,
+            });
+
+            console.log("Respuesta createCuenta:", cuentaRes);
+
+            const cuentasRes = await getCuentas();
+            const cuentas = Array.isArray(cuentasRes.data) ? cuentasRes.data : [];
+
+            // localizar por correo (más seguro que por usuario)
+            const cuenta = cuentas.find(c => c.Correo === formData.correo);
+
+            if (!cuenta) {
+                throw new Error("No se encontró la cuenta recién creada");
+            }
+
+            const nuevo = {
+                primernombre: formData.primernombre,
+                primerapellido: formData.primerapellido,
+                edad: parseInt(formData.edad),
+                sexo: formData.sexo,
+                estado: true,
+                cuentaid: cuenta.id,
+                administradorid: parseInt(formData.administradorid),
             };
-        })
-    : [];
+
+            await createInvestigador(nuevo);
+
+            getInvestigadores().then(res =>
+                setInvestigadores(Array.isArray(res.data) ? res.data : [])
+            );
+            setMessage({ text: "Investigador creado correctamente ➕", type: "success" });
+
+            setValidated(false);
+        } catch (err) {
+            if (err.response && err.response.data) {
+                const data = err.response.data;
+                if (data.Correo) {
+                    setMessage({ text: data.Correo[0], type: "error" });
+                } else if (data.usuario) {
+                    setMessage({ text: data.usuario[0], type: "error" });
+                } else {
+                    setMessage({ text: "Error al crear investigador ❌", type: "error" });
+                }
+            } else {
+                console.error(err);
+                setMessage({ text: "Error desconocido ❌", type: "error" });
+            }
+        } finally {
+            setProcessing(false);
+            setValidated(false);
+            setFormData({
+                usuario: "",
+                correo: "",
+                password: "",
+                primernombre: "",
+                primerapellido: "",
+                edad: "",
+                sexo: "",
+                administradorid: ""
+            });
+        }
+    };
+
+    // Mapear investigadores con nombre del administrador
+    const investigadoresConAdmin = Array.isArray(investigadores)
+        ? investigadores
+            .sort((a, b) => b.id - a.id)
+            .map(inv => {
+                const admin = administradores.find(a => a.id === inv.administradorid);
+                return {
+                    ...inv,
+                    administradorNombre: admin
+                        ? `${admin.primernombre} ${admin.primerapellido}`
+                        : "Sin asignar"
+                };
+            })
+        : [];
 
     if (loading) {
         return (
@@ -233,8 +248,12 @@ const investigadoresConAdmin = Array.isArray(investigadores)
             {/* Mensaje de resultado */}
             {message && (
                 <ToastMessage
-                    message={message}
-                    type="success"
+                    message={
+                        <div className="d-flex align-items-center">
+                            <div className="spinner-border spinner-border-sm me-2" role="status"></div>
+                            Procesando acción, por favor espera…
+                        </div>}
+                    type={message.type}
                     autohide={true}
                     delay={3000}
                     onClose={() => setMessage(null)}

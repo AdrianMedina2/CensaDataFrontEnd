@@ -1,70 +1,69 @@
 import { useEffect, useState } from "react";
 import {
-    getEmpleos,
-    createEmpleo,
-    patchEmpleo,
-    deleteEmpleo
+    getTiposDePisos,
+    createTipoDePiso,
+    patchTipoDePiso,
+    deleteTipoDePiso
 } from "../../services";
 import EditableTable from "../../components/EditableTable/EditableTable";
 import ToastMessage from "../../components/ToastMessage/ToastMessage";
 
-export default function EmpleoSection() {
-    const [empleos, setEmpleos] = useState([]);
+export default function TiposPisosSection() {
+    const [tiposPisos, setTiposPisos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState(null);
     const [processing, setProcessing] = useState(false);
 
     useEffect(() => {
-        getEmpleos()
+        getTiposDePisos()
             .then(res => {
-                setEmpleos(Array.isArray(res.data) ? res.data : []);
+                setTiposPisos(Array.isArray(res.data) ? res.data : []);
             })
             .finally(() => setLoading(false));
     }, []);
 
     const columns = [
-        { key: "empleo", label: "Empleo", rules: { required: true, minLength: 3 } },
+        { key: "tipodepiso", label: "Tipo de piso", rules: { required: true, minLength: 3 } },
     ];
 
     const handleEdit = (id, data) => {
         setProcessing(true);
-        patchEmpleo(id, data)
+        patchTipoDePiso(id, data)
             .then(() =>
-                getEmpleos().then(res =>
-                    setEmpleos(Array.isArray(res.data) ? res.data : [])
+                getTiposDePisos().then(res =>
+                    setTiposPisos(Array.isArray(res.data) ? res.data : [])
                 )
             )
             .finally(() => {
                 setProcessing(false);
-                setMessage({ text: "Empleo editado correctamente ✅", type: "success" });
+                setMessage({ text: "Tipo de piso editado correctamente ✅", type: "success" });
             });
     };
 
     const handleDelete = (id) => {
         setProcessing(true);
-        deleteEmpleo(id)
+        deleteTipoDePiso(id)
             .then(() =>
-                getEmpleos().then(res =>
-                    setEmpleos(Array.isArray(res.data) ? res.data : [])
+                getTiposDePisos().then(res =>
+                    setTiposPisos(Array.isArray(res.data) ? res.data : [])
                 )
             )
             .finally(() => {
                 setProcessing(false);
-                setMessage({ text: "Empleo eliminado correctamente 🗑️", type: "success" });
+                setMessage({ text: "Tipo de piso eliminado correctamente 🗑️", type: "success" });
             });
     };
 
     const handleAdd = async (nuevo) => {
         setProcessing(true);
         try {
-            // asegurar que siempre se mande estado: true
-            await createEmpleo({ ...nuevo, estado: true });
-            getEmpleos().then(res =>
-                setEmpleos(Array.isArray(res.data) ? res.data : [])
+            await createTipoDePiso(nuevo);
+            getTiposDePisos().then(res =>
+                setTiposPisos(Array.isArray(res.data) ? res.data : [])
             );
-            setMessage({ text: "Empleo creado correctamente ➕", type: "success" });
+            setMessage({ text: "Tipo de piso creado correctamente ➕", type: "success" });
         } catch (error) {
-            setMessage({ text: "Error al crear el empleo ❌", type: "error" });
+            setMessage({ text: "Error al crear el tipo de piso ❌", type: "error" });
         } finally {
             setProcessing(false);
         }
@@ -78,12 +77,11 @@ export default function EmpleoSection() {
         );
     }
 
-
     return (
         <div>
             <EditableTable
                 columns={columns}
-                data={Array.isArray(empleos) ? empleos : []}
+                data={Array.isArray(tiposPisos) ? tiposPisos : []}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onAdd={handleAdd}

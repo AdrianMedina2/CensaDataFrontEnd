@@ -129,6 +129,15 @@ export default function SidebarMenu() {
                         </>
                     )}
                 </NavLink>
+                <NavLink to="/infraestructura" className="nav-link fs-5 text-white" onClick={handleNavClick}>
+                    {({ isActive }) => (
+                        <>
+                            <i className={`bi ${isActive ? "bi-building-fill" : "bi-building"} me-2`}></i>
+                            Infraestructura
+                        </>
+                    )}
+                </NavLink>
+
             </div>
         </>
     );

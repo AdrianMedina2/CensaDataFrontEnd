@@ -15,7 +15,11 @@ export default function Censos() {
     const [deleteId, setDeleteId] = useState(null);
     const [submittedCreate, setSubmittedCreate] = useState(false);
     const [submittedEdit, setSubmittedEdit] = useState(false);
-
+    const hoy = new Date();
+    const yyyy = hoy.getUTCFullYear();
+    const mm = String(hoy.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(hoy.getUTCDate()).padStart(2, "0");
+    const today = `${yyyy}-${mm}-${dd}`;
 
     const handleDeleteClick = (id) => {
         setDeleteId(id);
@@ -30,8 +34,9 @@ export default function Censos() {
 
     const [formData, setFormData] = useState({
         nombrecenso: "",
-        fechainiciocenso: "",
+        fechainiciocenso: today,
         fechafincenso: "",
+        poblaciontotal: "",
     });
 
     const [editId, setEditId] = useState(null);
@@ -39,13 +44,14 @@ export default function Censos() {
         nombrecenso: "",
         fechainiciocenso: "",
         fechafincenso: "",
+        poblaciontotal: "",
     });
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const data = await getCensos();
-                setCensos(data);
+                const res = await getCensos();
+                setCensos(Array.isArray(res.data) ? res.data : []);
             } catch (err) {
                 setError("Error al cargar censos");
                 console.error(err);
@@ -70,25 +76,48 @@ export default function Censos() {
             setProcessing(false);
             return;
         }
+        if (!formData.poblaciontotal || parseInt(formData.poblaciontotal) <= 0) {
+            setProcessing(false);
+            return;
+        }
         if (!formData.fechainiciocenso || !formData.fechafincenso) {
             setProcessing(false);
             return;
         }
-        if (new Date(formData.fechafincenso) < new Date(formData.fechainiciocenso)) {
+
+        const inicio = new Date(formData.fechainiciocenso + "T00:00:00Z");
+        const fin = new Date(formData.fechafincenso + "T00:00:00Z");
+
+        const hoyUTC = new Date(today + "T00:00:00Z");
+
+        if (inicio < hoyUTC) {
             setProcessing(false);
+            setMessage({ type: "danger", text: "La fecha de inicio no puede ser anterior a hoy" });
             return;
         }
-
+        if (fin < inicio) {
+            setProcessing(false);
+            setMessage({ type: "danger", text: "La fecha de fin no puede ser anterior a la de inicio" });
+            return;
+        }
         try {
-            const nuevo = await createCenso(formData);
-            setCensos((prev) => [...prev, nuevo]);
-            setFormData({ nombrecenso: "", fechainiciocenso: "", fechafincenso: "" });
+            await createCenso(formData);
+            const resAll = await getCensos();
+            setCensos(Array.isArray(resAll.data) ? resAll.data : []);
+
+            setFormData({
+                nombrecenso: "",
+                poblaciontotal: "",
+                fechainiciocenso: today,
+                fechafincenso: ""
+            });
             setSubmittedCreate(false);
             setMessage({ type: "success", text: "Censo creado exitosamente ✅" });
         } catch (err) {
             console.error("Error al crear censo:", err.response?.data || err);
             setMessage({ type: "danger", text: "Error al crear censo ❌" });
         }
+
         setProcessing(false);
     };
 
@@ -97,22 +126,21 @@ export default function Censos() {
         setProcessing(true);
         try {
             await deleteCenso(id);
-            setCensos((prev) =>
-                prev.map((c) => (c.id === id ? { ...c, estado: false } : c))
-            );
-            setMessage({ type: "warning", text: "Censo desactivado ⚠️" });
+            setCensos((prev) => prev.filter((c) => c.id !== id));
+            setMessage({ type: "warning", text: "Censo eliminado ⚠️" });
         } catch (err) {
-            console.error("Error al desactivar censo:", err);
-            setMessage({ type: "danger", text: "Error al desactivar censo ❌" });
+            console.error("Error al eliminar censo:", err);
+            setMessage({ type: "danger", text: "Error al eliminar censo ❌" });
         }
         setProcessing(false);
     };
+
 
     const handleEditClick = (censo) => {
         setEditId(censo.id);
         setEditData({
             nombrecenso: censo.nombrecenso,
-            fechainiciocenso: censo.fechainiciocenso.split("T")[0],
+            poblaciontotal: censo.poblaciontotal,
             fechafincenso: censo.fechafincenso.split("T")[0],
         });
     };
@@ -130,17 +158,14 @@ export default function Censos() {
             setProcessing(false);
             return;
         }
-        if (!editData.fechainiciocenso || !editData.fechafincenso) {
-            setProcessing(false);
-            return;
-        }
         if (new Date(editData.fechafincenso) < new Date(editData.fechainiciocenso)) {
             setProcessing(false);
             return;
         }
 
         try {
-            const actualizado = await patchCenso(id, editData);
+            const res = await patchCenso(id, editData);
+            const actualizado = res.data;
             setCensos((prev) =>
                 prev.map((c) => (c.id === id ? { ...c, ...actualizado } : c))
             );
@@ -207,7 +232,7 @@ export default function Censos() {
             {/* Formulario de creación arriba */}
             <h3 className="fw-bold">Crear nuevo censo</h3>
             <form onSubmit={handleCreate} className="row g-3 mb-4">
-                <div className="col-md-6">
+                <div className="col-md-3">
                     <label className="form-label">Nombre</label>
                     <ValidatedInput
                         type="text"
@@ -219,7 +244,19 @@ export default function Censos() {
                                 : ""
                         }
                     />
-
+                </div>
+                <div className="col-md-3">
+                    <label className="form-label">Población requerida</label>
+                    <ValidatedInput
+                        type="number"
+                        value={formData.poblaciontotal}
+                        onChange={(val) => setFormData(prev => ({ ...prev, poblaciontotal: val }))}
+                        error={
+                            submittedCreate && (!formData.poblaciontotal || parseInt(formData.poblaciontotal) <= 0)
+                                ? "La población requerida debe ser mayor a 0"
+                                : ""
+                        }
+                    />
                 </div>
                 <div className="col-md-3">
                     <label className="form-label">Inicio</label>
@@ -230,7 +267,14 @@ export default function Censos() {
                         error={
                             submittedCreate && !formData.fechainiciocenso
                                 ? "Selecciona una fecha de inicio válida"
-                                : ""
+                                : submittedCreate && (() => {
+                                    const hoyUTC = new Date();
+                                    hoyUTC.setUTCHours(0, 0, 0, 0);
+
+                                    return new Date(formData.fechainiciocenso + "T00:00:00Z") < hoyUTC;
+                                })()
+                                    ? "La fecha de inicio no puede ser anterior a hoy"
+                                    : ""
                         }
                     />
                 </div>
@@ -249,6 +293,7 @@ export default function Censos() {
                         }
                     />
                 </div>
+
                 <div className="col-12">
                     <button type="submit" className="btn btn-brand w-100">
                         Crear activo
@@ -259,7 +304,6 @@ export default function Censos() {
             <h3 className="fw-bold">Censos activos</h3>
             <div className="row mt-3">
                 {censos
-                    .filter((c) => c.estado)
                     .sort((a, b) => b.id - a.id)
                     .map((censo) => (
                         <TiltCard className="col-md-4 mb-3" key={censo.id}>
@@ -267,39 +311,39 @@ export default function Censos() {
                                 <div className="card-body">
                                     {editId === censo.id ? (
                                         <>
+                                            <label className="form-label">Nombre</label>
                                             <ValidatedInput
                                                 type="text"
                                                 value={editData.nombrecenso}
-                                                onChange={(val) => setEditData(prev => ({ ...prev, nombrecenso: val }))}
+                                                onChange={(val) =>
+                                                    setEditData((prev) => ({ ...prev, nombrecenso: val }))
+                                                }
                                                 error={
-                                                    submittedEdit && (!editData.nombrecenso || editData.nombrecenso.length < 3)
+                                                    submittedEdit &&
+                                                        (!editData.nombrecenso || editData.nombrecenso.length < 3)
                                                         ? "El nombre debe tener al menos 3 caracteres"
                                                         : ""
                                                 }
                                             />
 
-                                            <ValidatedInput
-                                                type="date"
-                                                value={editData.fechainiciocenso}
-                                                onChange={(val) => setEditData(prev => ({ ...prev, fechainiciocenso: val }))}
-                                                error={
-                                                    submittedEdit && !editData.fechainiciocenso
-                                                        ? "Selecciona una fecha de inicio válida"
-                                                        : ""
-                                                }
-                                            />
+                                            <label className="form-label">Fecha de fin</label>
                                             <ValidatedInput
                                                 type="date"
                                                 value={editData.fechafincenso}
-                                                onChange={(val) => setEditData(prev => ({ ...prev, fechafincenso: val }))}
+                                                onChange={(val) =>
+                                                    setEditData((prev) => ({ ...prev, fechafincenso: val }))
+                                                }
                                                 error={
                                                     submittedEdit && !editData.fechafincenso
                                                         ? "Selecciona una fecha de finalización válida"
-                                                        : submittedEdit && new Date(editData.fechafincenso) < new Date(editData.fechainiciocenso)
+                                                        : submittedEdit &&
+                                                            new Date(editData.fechafincenso) <
+                                                            new Date(editData.fechainiciocenso)
                                                             ? "La fecha de fin no puede ser anterior a la de inicio"
                                                             : ""
                                                 }
                                             />
+
                                             <button
                                                 className="btn btn-sm btn-success me-2"
                                                 onClick={() => handleEditSave(censo.id)}
@@ -315,11 +359,15 @@ export default function Censos() {
                                         </>
                                     ) : (
                                         <>
-                                            <h5 className="card-title color-brand fw-bold">{censo.nombrecenso || "Sin nombre"}</h5>
+                                            <h5 className="card-title color-brand fw-bold">
+                                                {censo.nombrecenso || "Sin nombre"}
+                                            </h5>
                                             <p className="card-text">
-                                                <strong>Personas encuestadas:</strong> {censo.cantidadencuestados || 0}
+                                                <strong>Personas encuestadas:</strong>{" "}
+                                                {censo.cantidadencuestados || 0}
                                                 <br />
-                                                <strong>Casas encuestadas:</strong> {censo.cantidadrespuestaspositivas || 0}
+                                                <strong>Población total:</strong>{" "}
+                                                {censo.poblaciontotal || 0}
                                                 <br />
                                                 <strong>Inicio:</strong>{" "}
                                                 {new Date(censo.fechainiciocenso).toLocaleDateString()}

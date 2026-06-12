@@ -16,8 +16,8 @@ export default function ParentescoSection() {
 
     useEffect(() => {
         getRelacionesParentescos()
-            .then(data => {
-                setParentescos(data.results || data);
+            .then(res => {
+                setParentescos(Array.isArray(res.data) ? res.data : []);
             })
             .finally(() => setLoading(false));
     }, []);
@@ -29,7 +29,11 @@ export default function ParentescoSection() {
     const handleEdit = (id, data) => {
         setProcessing(true);
         patchRelacionParentesco(id, data)
-            .then(() => getRelacionesParentescos().then(res => setParentescos(res.results || res)))
+            .then(() =>
+                getRelacionesParentescos().then(res =>
+                    setParentescos(Array.isArray(res.data) ? res.data : [])
+                )
+            )
             .finally(() => {
                 setProcessing(false);
                 setMessage({ text: "Relación editada correctamente ✅", type: "success" });
@@ -39,10 +43,14 @@ export default function ParentescoSection() {
     const handleDelete = (id) => {
         setProcessing(true);
         deleteRelacionParentesco(id)
-            .then(() => getRelacionesParentescos().then(res => setParentescos(res.results || res)))
+            .then(() =>
+                getRelacionesParentescos().then(res =>
+                    setParentescos(Array.isArray(res.data) ? res.data : [])
+                )
+            )
             .finally(() => {
                 setProcessing(false);
-                setMessage("Relación eliminada correctamente 🗑️");
+                setMessage({ text: "Relación eliminada correctamente 🗑️", type: "success" });
             });
     };
 
@@ -50,8 +58,10 @@ export default function ParentescoSection() {
         setProcessing(true);
         try {
             await createRelacionParentesco(nuevo);
-            getRelacionesParentescos().then(res => setParentescos(res.results || res));
-            setMessage("Relación creada correctamente ➕");
+            getRelacionesParentescos().then(res =>
+                setParentescos(Array.isArray(res.data) ? res.data : [])
+            );
+            setMessage({ text: "Relación creada correctamente ➕", type: "success" });
         } finally {
             setProcessing(false);
         }
@@ -65,11 +75,12 @@ export default function ParentescoSection() {
         );
     }
 
+
     return (
         <div>
             <EditableTable
                 columns={columns}
-                data={Array.isArray(parentescos) ? parentescos.filter(p => p.estado === true) : []}
+                data={Array.isArray(parentescos) ? parentescos : []}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onAdd={handleAdd}
@@ -89,7 +100,6 @@ export default function ParentescoSection() {
                     onClose={() => setProcessing(false)}
                 />
             )}
-
 
             {/* Mensajes de éxito/error */}
             {message && (

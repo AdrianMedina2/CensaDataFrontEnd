@@ -19,8 +19,8 @@ export default function MunicipiosSection() {
     useEffect(() => {
         Promise.all([getMunicipios(), getDepartamentos()])
             .then(([municipiosData, departamentosData]) => {
-                setMunicipios(municipiosData);
-                setDepartamentos(departamentosData);
+                setMunicipios(Array.isArray(municipiosData.data) ? municipiosData.data : []);
+                setDepartamentos(Array.isArray(departamentosData.data) ? departamentosData.data : []);
             })
             .finally(() => setLoading(false));
     }, []);
@@ -35,9 +35,7 @@ export default function MunicipiosSection() {
             key: "departamentoid",
             label: "Departamento",
             type: "select",
-            options: departamentos
-                .filter(d => d.estado === true || d.estado === 1)
-                .map(d => ({ value: d.id, label: d.nombre })),
+            options: departamentos.map(d => ({ value: d.id, label: d.nombre })),
             rules: { required: true },
             render: (row) => {
                 const dep = departamentos.find(d => d.id === row.departamentoid);
@@ -46,11 +44,12 @@ export default function MunicipiosSection() {
         }
     ];
 
-
     const handleEdit = (id, data) => {
         setProcessing(true);
         patchMunicipio(id, data)
-            .then(() => getMunicipios().then(setMunicipios))
+            .then(() => getMunicipios().then(res =>
+                setMunicipios(Array.isArray(res.data) ? res.data : [])
+            ))
             .finally(() => {
                 setProcessing(false);
                 setMessage({ text: "Municipio editado correctamente ✅", type: "success" });
@@ -60,7 +59,9 @@ export default function MunicipiosSection() {
     const handleDelete = (id) => {
         setProcessing(true);
         deleteMunicipio(id)
-            .then(() => getMunicipios().then(setMunicipios))
+            .then(() => getMunicipios().then(res =>
+                setMunicipios(Array.isArray(res.data) ? res.data : [])
+            ))
             .finally(() => {
                 setProcessing(false);
                 setMessage({ text: "Municipio eliminado correctamente 🗑️", type: "warning" });
@@ -70,8 +71,10 @@ export default function MunicipiosSection() {
     const handleAdd = async (nuevo) => {
         setProcessing(true);
         try {
-            await createMunicipio({ ...nuevo, cantidadbarrios: 0, estado: true });
-            getMunicipios().then(setMunicipios);
+            await createMunicipio({ ...nuevo, cantidadbarrios: 0 });
+            getMunicipios().then(res =>
+                setMunicipios(Array.isArray(res.data) ? res.data : [])
+            );
             setMessage({ text: "Municipio creado correctamente ➕", type: "success" });
         } catch (error) {
             setMessage({ text: "Error al crear el municipio ❌", type: "danger" });
@@ -80,10 +83,9 @@ export default function MunicipiosSection() {
         }
     };
 
-    // Ordenar municipios para que el último aparezca primero
-    const municipiosOrdenados = municipios
-        .filter(m => m.estado === true || m.estado === 1)
-        .sort((a, b) => b.id - a.id);
+    const municipiosOrdenados = Array.isArray(municipios)
+        ? municipios.sort((a, b) => b.id - a.id)
+        : [];
 
     if (loading) {
         return (
@@ -97,7 +99,7 @@ export default function MunicipiosSection() {
         <div>
             <EditableTable
                 columns={columns}
-                data={Array.isArray(municipiosOrdenados) ? municipiosOrdenados : []}
+                data={municipiosOrdenados}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onAdd={handleAdd}

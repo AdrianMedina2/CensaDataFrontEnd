@@ -4,3 +4,5 @@ export * from "./investigadoresApi";
 export * from "./administradoresApi";
 export * from "./personalApi"
 export * from "./ubicacionesApi"
+export * from "./recuperacionApi"
+export * from "./InfraestructuraApi"

@@ -16,8 +16,8 @@ export default function EstadosCivilesSection() {
 
     useEffect(() => {
         getEstadosCiviles()
-            .then(data => {
-                setEstadosCiviles(data);
+            .then(res => {
+                setEstadosCiviles(Array.isArray(res.data) ? res.data : []);
             })
             .finally(() => setLoading(false));
     }, []);
@@ -30,7 +30,9 @@ export default function EstadosCivilesSection() {
         setProcessing(true);
         try {
             await patchEstadoCivil(id, data);
-            getEstadosCiviles().then(setEstadosCiviles);
+            getEstadosCiviles().then(res =>
+                setEstadosCiviles(Array.isArray(res.data) ? res.data : [])
+            );
             setMessage({ text: "Estado civil editado correctamente ✅", type: "success" });
         } catch (error) {
             setMessage({ text: "Error al editar el estado civil ❌", type: "error" });
@@ -43,7 +45,9 @@ export default function EstadosCivilesSection() {
         setProcessing(true);
         try {
             await deleteEstadoCivil(id);
-            getEstadosCiviles().then(setEstadosCiviles);
+            getEstadosCiviles().then(res =>
+                setEstadosCiviles(Array.isArray(res.data) ? res.data : [])
+            );
             setMessage({ text: "Estado civil eliminado correctamente 🗑️", type: "success" });
         } catch (error) {
             setMessage({ text: "Error al eliminar el estado civil ❌", type: "error" });
@@ -56,7 +60,9 @@ export default function EstadosCivilesSection() {
         setProcessing(true);
         try {
             await createEstadoCivil({ ...nuevo, estado: true });
-            getEstadosCiviles().then(setEstadosCiviles);
+            getEstadosCiviles().then(res =>
+                setEstadosCiviles(Array.isArray(res.data) ? res.data : [])
+            );
             setMessage({ text: "Estado civil creado correctamente ➕", type: "success" });
         } catch (error) {
             setMessage({ text: "Error al crear el estado civil ❌", type: "error" });
@@ -64,7 +70,6 @@ export default function EstadosCivilesSection() {
             setProcessing(false);
         }
     };
-
 
     if (loading) {
         return (
@@ -74,11 +79,12 @@ export default function EstadosCivilesSection() {
         );
     }
 
+
     return (
         <div>
             <EditableTable
                 columns={columns}
-                data={Array.isArray(estadosCiviles) ? estadosCiviles.filter(e => e.estado === true) : []}
+                data={Array.isArray(estadosCiviles) ? estadosCiviles : []}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onAdd={handleAdd}
@@ -97,7 +103,6 @@ export default function EstadosCivilesSection() {
                     onClose={() => setProcessing(false)}
                 />
             )}
-
 
             {message && (
                 <ToastMessage

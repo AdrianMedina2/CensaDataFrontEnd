@@ -16,9 +16,8 @@ export default function EducacionSection() {
 
     useEffect(() => {
         getNivelesEducativos()
-            .then(data => {
-                console.log("Respuesta API Niveles Educativos:", data);
-                setNivelesEducativos(data);
+            .then(res => {
+                setNivelesEducativos(Array.isArray(res.data) ? res.data : []);
             })
             .finally(() => setLoading(false));
     }, []);
@@ -32,7 +31,9 @@ export default function EducacionSection() {
         setProcessing(true);
         try {
             await patchNivelEducativo(id, data);
-            getNivelesEducativos().then(setNivelesEducativos);
+            getNivelesEducativos().then(res =>
+                setNivelesEducativos(Array.isArray(res.data) ? res.data : [])
+            );
             setMessage({ text: "Nivel educativo editado correctamente ✅", type: "success" });
         } catch (error) {
             let errorMsg = "Error al editar el nivel educativo";
@@ -55,7 +56,9 @@ export default function EducacionSection() {
         setProcessing(true);
         try {
             await deleteNivelEducativo(id);
-            getNivelesEducativos().then(setNivelesEducativos);
+            getNivelesEducativos().then(res =>
+                setNivelesEducativos(Array.isArray(res.data) ? res.data : [])
+            );
             setMessage({ text: "Nivel educativo eliminado correctamente 🗑️", type: "success" });
         } catch (error) {
             let errorMsg = "Error al eliminar el nivel educativo";
@@ -78,7 +81,9 @@ export default function EducacionSection() {
         setProcessing(true);
         try {
             await createNivelEducativo(nuevo);
-            getNivelesEducativos().then(setNivelesEducativos);
+            getNivelesEducativos().then(res =>
+                setNivelesEducativos(Array.isArray(res.data) ? res.data : [])
+            );
             setMessage({ text: "Nivel educativo creado correctamente ➕", type: "success" });
         } catch (error) {
             let errorMsg = "Error al crear el nivel educativo";
@@ -109,7 +114,7 @@ export default function EducacionSection() {
         <div>
             <EditableTable
                 columns={columns}
-                data={Array.isArray(nivelesEducativos) ? nivelesEducativos.filter(e => e.estado === true) : []}
+                data={Array.isArray(nivelesEducativos) ? nivelesEducativos : []}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onAdd={handleAdd}
@@ -128,7 +133,6 @@ export default function EducacionSection() {
                     onClose={() => setProcessing(false)}
                 />
             )}
-
 
             {message && (
                 <ToastMessage

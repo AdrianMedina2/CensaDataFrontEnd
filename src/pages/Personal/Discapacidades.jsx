@@ -1,70 +1,69 @@
 import { useEffect, useState } from "react";
 import {
-    getEmpleos,
-    createEmpleo,
-    patchEmpleo,
-    deleteEmpleo
+    getDiscapacidades,
+    createDiscapacidad,
+    patchDiscapacidad,
+    deleteDiscapacidad
 } from "../../services";
 import EditableTable from "../../components/EditableTable/EditableTable";
 import ToastMessage from "../../components/ToastMessage/ToastMessage";
 
-export default function EmpleoSection() {
-    const [empleos, setEmpleos] = useState([]);
+export default function DiscapacidadesSection() {
+    const [discapacidades, setDiscapacidades] = useState([]);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState(null);
     const [processing, setProcessing] = useState(false);
 
     useEffect(() => {
-        getEmpleos()
+        getDiscapacidades()
             .then(res => {
-                setEmpleos(Array.isArray(res.data) ? res.data : []);
+                setDiscapacidades(Array.isArray(res.data) ? res.data : []);
             })
             .finally(() => setLoading(false));
     }, []);
 
     const columns = [
-        { key: "empleo", label: "Empleo", rules: { required: true, minLength: 3 } },
+        { key: "discapacidad", label: "Discapacidad", rules: { required: true, minLength: 3 } },
     ];
 
     const handleEdit = (id, data) => {
         setProcessing(true);
-        patchEmpleo(id, data)
+        patchDiscapacidad(id, data)
             .then(() =>
-                getEmpleos().then(res =>
-                    setEmpleos(Array.isArray(res.data) ? res.data : [])
+                getDiscapacidades().then(res =>
+                    setDiscapacidades(Array.isArray(res.data) ? res.data : [])
                 )
             )
             .finally(() => {
                 setProcessing(false);
-                setMessage({ text: "Empleo editado correctamente ✅", type: "success" });
+                setMessage({ text: "Discapacidad editada correctamente ✅", type: "success" });
             });
     };
 
     const handleDelete = (id) => {
         setProcessing(true);
-        deleteEmpleo(id)
+        deleteDiscapacidad(id)
             .then(() =>
-                getEmpleos().then(res =>
-                    setEmpleos(Array.isArray(res.data) ? res.data : [])
+                getDiscapacidades().then(res =>
+                    setDiscapacidades(Array.isArray(res.data) ? res.data : [])
                 )
             )
             .finally(() => {
                 setProcessing(false);
-                setMessage({ text: "Empleo eliminado correctamente 🗑️", type: "success" });
+                setMessage({ text: "Discapacidad eliminada correctamente 🗑️", type: "success" });
             });
     };
 
     const handleAdd = async (nuevo) => {
         setProcessing(true);
         try {
-            // asegurar que siempre se mande estado: true
-            await createEmpleo({ ...nuevo, estado: true });
-            getEmpleos().then(res =>
-                setEmpleos(Array.isArray(res.data) ? res.data : [])
+            await createDiscapacidad(nuevo);
+            getDiscapacidades().then(res =>
+                setDiscapacidades(Array.isArray(res.data) ? res.data : [])
             );
-            setMessage({ text: "Empleo creado correctamente ➕", type: "success" });
+            setMessage({ text: "Discapacidad creada correctamente ➕", type: "success" });
         } catch (error) {
-            setMessage({ text: "Error al crear el empleo ❌", type: "error" });
+            setMessage({ text: "Error al crear la discapacidad ❌", type: "error" });
         } finally {
             setProcessing(false);
         }
@@ -78,12 +77,11 @@ export default function EmpleoSection() {
         );
     }
 
-
     return (
         <div>
             <EditableTable
                 columns={columns}
-                data={Array.isArray(empleos) ? empleos : []}
+                data={Array.isArray(discapacidades) ? discapacidades : []}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onAdd={handleAdd}

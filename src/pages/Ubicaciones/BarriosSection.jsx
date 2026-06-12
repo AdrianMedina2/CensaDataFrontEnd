@@ -19,8 +19,8 @@ export default function BarriosSection() {
     useEffect(() => {
         Promise.all([getBarrios(), getMunicipios()])
             .then(([barriosData, municipiosData]) => {
-                setBarrios(barriosData);
-                setMunicipios(municipiosData);
+                setBarrios(Array.isArray(barriosData.data) ? barriosData.data : []);
+                setMunicipios(Array.isArray(municipiosData.data) ? municipiosData.data : []);
             })
             .finally(() => setLoading(false));
     }, []);
@@ -31,9 +31,7 @@ export default function BarriosSection() {
             key: "municipioid",
             label: "Municipio",
             type: "select",
-            options: municipios
-                .filter(m => m.estado === true || m.estado === 1)
-                .map(m => ({ value: m.id, label: m.nombre })),
+            options: municipios.map(m => ({ value: m.id, label: m.nombre })),
             rules: { required: true },
             render: (row) => {
                 const municipio = municipios.find(m => m.id === row.municipioid);
@@ -45,7 +43,9 @@ export default function BarriosSection() {
     const handleEdit = (id, data) => {
         setProcessing(true);
         patchBarrio(id, data)
-            .then(() => getBarrios().then(setBarrios))
+            .then(() => getBarrios().then(res =>
+                setBarrios(Array.isArray(res.data) ? res.data : [])
+            ))
             .finally(() => {
                 setProcessing(false);
                 setMessage({ text: "Barrio editado correctamente ✅", type: "success" });
@@ -55,7 +55,9 @@ export default function BarriosSection() {
     const handleDelete = (id) => {
         setProcessing(true);
         deleteBarrio(id)
-            .then(() => getBarrios().then(setBarrios))
+            .then(() => getBarrios().then(res =>
+                setBarrios(Array.isArray(res.data) ? res.data : [])
+            ))
             .finally(() => {
                 setProcessing(false);
                 setMessage({ text: "Barrio eliminado correctamente 🗑️", type: "warning" });
@@ -65,8 +67,10 @@ export default function BarriosSection() {
     const handleAdd = async (nuevo) => {
         setProcessing(true);
         try {
-            await createBarrio({ ...nuevo, cantidadcasas: 0, estado: true });
-            getBarrios().then(setBarrios);
+            await createBarrio({ ...nuevo, cantidadcasas: 0 });
+            getBarrios().then(res =>
+                setBarrios(Array.isArray(res.data) ? res.data : [])
+            );
             setMessage({ text: "Barrio creado correctamente ➕", type: "success" });
         } catch (error) {
             setMessage({ text: "Error al crear el barrio ❌", type: "danger" });
@@ -75,10 +79,9 @@ export default function BarriosSection() {
         }
     };
 
-    // Ordenar barrios para que el último aparezca primero
-    const barriosOrdenados = barrios
-        .filter(b => b.estado === true || b.estado === 1)
-        .sort((a, b) => b.id - a.id);
+    const barriosOrdenados = Array.isArray(barrios)
+        ? barrios.sort((a, b) => b.id - a.id)
+        : [];
 
     if (loading) {
         return (
@@ -92,7 +95,7 @@ export default function BarriosSection() {
         <div>
             <EditableTable
                 columns={columns}
-                data={Array.isArray(barriosOrdenados) ? barriosOrdenados : []}
+                data={barriosOrdenados}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onAdd={handleAdd}

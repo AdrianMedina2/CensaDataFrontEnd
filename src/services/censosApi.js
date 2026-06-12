@@ -14,26 +14,21 @@ export const getCensoById = async (id) => {
 
 // Crear un nuevo censo (POST)
 export const createCenso = async (data) => {
-    const formatDate = (dateStr) => {
-        // Convierte "2026-06-08" en "2026-06-08T00:00:00"
-        return `${dateStr}T00:00:00`;
-    };
-
     const payload = {
         nombrecenso: data.nombrecenso,
         estado: true,
-        fechainiciocenso: formatDate(data.fechainiciocenso),
-        fechafincenso: formatDate(data.fechafincenso),
+        fechainiciocenso: data.fechainiciocenso,   
+        fechafincenso: data.fechafincenso,         
         cantidadencuestados: 0,
         cantidadrespuestaspositivas: 0,
         cantidadrespuestasnegativas: 0,
         cantidadencuestas: 0,
         muestrapoblacional: 0,
-        poblaciontotal: 0,
+        poblaciontotal: parseInt(data.poblaciontotal, 10), 
         cantidadcasasencuestadas: 0,
     };
 
-    const res = await api.post("/api/Censos/", payload);
+    const res = await api.post("/api/censoCompleto/", payload);
     return res.data;
 };
 
