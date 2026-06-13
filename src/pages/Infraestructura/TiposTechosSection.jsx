@@ -14,12 +14,18 @@ export default function TiposTechosSection() {
     const [message, setMessage] = useState(null);
     const [processing, setProcessing] = useState(false);
 
-    useEffect(() => {
+    const cargarDatos = () => {
         getTiposDeTechos()
             .then(res => {
-                setTiposTechos(Array.isArray(res.data) ? res.data : []);
+                const datos = Array.isArray(res.data) ? res.data : [];
+                const ordenados = datos.sort((a, b) => b.id - a.id);
+                setTiposTechos(ordenados);
             })
             .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        cargarDatos();
     }, []);
 
     const columns = [
@@ -29,11 +35,7 @@ export default function TiposTechosSection() {
     const handleEdit = (id, data) => {
         setProcessing(true);
         patchTipoDeTecho(id, data)
-            .then(() =>
-                getTiposDeTechos().then(res =>
-                    setTiposTechos(Array.isArray(res.data) ? res.data : [])
-                )
-            )
+            .then(() => cargarDatos())
             .finally(() => {
                 setProcessing(false);
                 setMessage({ text: "Tipo de techo editado correctamente ✅", type: "success" });
@@ -43,11 +45,7 @@ export default function TiposTechosSection() {
     const handleDelete = (id) => {
         setProcessing(true);
         deleteTipoDeTecho(id)
-            .then(() =>
-                getTiposDeTechos().then(res =>
-                    setTiposTechos(Array.isArray(res.data) ? res.data : [])
-                )
-            )
+            .then(() => cargarDatos())
             .finally(() => {
                 setProcessing(false);
                 setMessage({ text: "Tipo de techo eliminado correctamente 🗑️", type: "success" });
@@ -58,9 +56,7 @@ export default function TiposTechosSection() {
         setProcessing(true);
         try {
             await createTipoDeTecho(nuevo);
-            getTiposDeTechos().then(res =>
-                setTiposTechos(Array.isArray(res.data) ? res.data : [])
-            );
+            cargarDatos();
             setMessage({ text: "Tipo de techo creado correctamente ➕", type: "success" });
         } catch (error) {
             setMessage({ text: "Error al crear el tipo de techo ❌", type: "error" });
@@ -87,7 +83,6 @@ export default function TiposTechosSection() {
                 onAdd={handleAdd}
             />
 
-            {/* Mensaje de acción en curso */}
             {processing && (
                 <ToastMessage
                     message={
@@ -102,7 +97,6 @@ export default function TiposTechosSection() {
                 />
             )}
 
-            {/* Mensajes de éxito/error */}
             {message && (
                 <ToastMessage
                     message={message.text}

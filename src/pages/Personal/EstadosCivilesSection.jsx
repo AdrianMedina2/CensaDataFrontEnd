@@ -14,12 +14,18 @@ export default function EstadosCivilesSection() {
     const [message, setMessage] = useState(null);
     const [processing, setProcessing] = useState(false);
 
-    useEffect(() => {
+    const cargarDatos = () => {
         getEstadosCiviles()
             .then(res => {
-                setEstadosCiviles(Array.isArray(res.data) ? res.data : []);
+                const datos = Array.isArray(res.data) ? res.data : [];
+                const ordenados = datos.sort((a, b) => b.id - a.id);
+                setEstadosCiviles(ordenados);
             })
             .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        cargarDatos();
     }, []);
 
     const columns = [
@@ -30,9 +36,7 @@ export default function EstadosCivilesSection() {
         setProcessing(true);
         try {
             await patchEstadoCivil(id, data);
-            getEstadosCiviles().then(res =>
-                setEstadosCiviles(Array.isArray(res.data) ? res.data : [])
-            );
+            cargarDatos();
             setMessage({ text: "Estado civil editado correctamente ✅", type: "success" });
         } catch (error) {
             setMessage({ text: "Error al editar el estado civil ❌", type: "error" });
@@ -45,9 +49,7 @@ export default function EstadosCivilesSection() {
         setProcessing(true);
         try {
             await deleteEstadoCivil(id);
-            getEstadosCiviles().then(res =>
-                setEstadosCiviles(Array.isArray(res.data) ? res.data : [])
-            );
+            cargarDatos();
             setMessage({ text: "Estado civil eliminado correctamente 🗑️", type: "success" });
         } catch (error) {
             setMessage({ text: "Error al eliminar el estado civil ❌", type: "error" });
@@ -60,9 +62,7 @@ export default function EstadosCivilesSection() {
         setProcessing(true);
         try {
             await createEstadoCivil({ ...nuevo, estado: true });
-            getEstadosCiviles().then(res =>
-                setEstadosCiviles(Array.isArray(res.data) ? res.data : [])
-            );
+            cargarDatos();
             setMessage({ text: "Estado civil creado correctamente ➕", type: "success" });
         } catch (error) {
             setMessage({ text: "Error al crear el estado civil ❌", type: "error" });
@@ -78,7 +78,6 @@ export default function EstadosCivilesSection() {
             </div>
         );
     }
-
 
     return (
         <div>

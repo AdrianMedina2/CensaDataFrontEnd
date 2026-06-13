@@ -14,12 +14,18 @@ export default function ParentescoSection() {
     const [message, setMessage] = useState(null);
     const [processing, setProcessing] = useState(false);
 
-    useEffect(() => {
+    const cargarDatos = () => {
         getRelacionesParentescos()
             .then(res => {
-                setParentescos(Array.isArray(res.data) ? res.data : []);
+                const datos = Array.isArray(res.data) ? res.data : [];
+                const ordenados = datos.sort((a, b) => b.id - a.id);
+                setParentescos(ordenados);
             })
             .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        cargarDatos();
     }, []);
 
     const columns = [
@@ -29,11 +35,7 @@ export default function ParentescoSection() {
     const handleEdit = (id, data) => {
         setProcessing(true);
         patchRelacionParentesco(id, data)
-            .then(() =>
-                getRelacionesParentescos().then(res =>
-                    setParentescos(Array.isArray(res.data) ? res.data : [])
-                )
-            )
+            .then(() => cargarDatos())
             .finally(() => {
                 setProcessing(false);
                 setMessage({ text: "Relación editada correctamente ✅", type: "success" });
@@ -43,11 +45,7 @@ export default function ParentescoSection() {
     const handleDelete = (id) => {
         setProcessing(true);
         deleteRelacionParentesco(id)
-            .then(() =>
-                getRelacionesParentescos().then(res =>
-                    setParentescos(Array.isArray(res.data) ? res.data : [])
-                )
-            )
+            .then(() => cargarDatos())
             .finally(() => {
                 setProcessing(false);
                 setMessage({ text: "Relación eliminada correctamente 🗑️", type: "success" });
@@ -58,9 +56,7 @@ export default function ParentescoSection() {
         setProcessing(true);
         try {
             await createRelacionParentesco(nuevo);
-            getRelacionesParentescos().then(res =>
-                setParentescos(Array.isArray(res.data) ? res.data : [])
-            );
+            cargarDatos();
             setMessage({ text: "Relación creada correctamente ➕", type: "success" });
         } finally {
             setProcessing(false);
@@ -75,7 +71,6 @@ export default function ParentescoSection() {
         );
     }
 
-
     return (
         <div>
             <EditableTable
@@ -86,7 +81,6 @@ export default function ParentescoSection() {
                 onAdd={handleAdd}
             />
 
-            {/* Mensaje de acción en curso */}
             {processing && (
                 <ToastMessage
                     message={
@@ -101,7 +95,6 @@ export default function ParentescoSection() {
                 />
             )}
 
-            {/* Mensajes de éxito/error */}
             {message && (
                 <ToastMessage
                     message={message.text}

@@ -14,26 +14,28 @@ export default function TiposPisosSection() {
     const [message, setMessage] = useState(null);
     const [processing, setProcessing] = useState(false);
 
-    useEffect(() => {
+    const cargarDatos = () => {
         getTiposDePisos()
             .then(res => {
-                setTiposPisos(Array.isArray(res.data) ? res.data : []);
+                const datos = Array.isArray(res) ? res : [];
+                const ordenados = datos.sort((a, b) => b.id - a.id);
+                setTiposPisos(ordenados);
             })
             .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        cargarDatos();
     }, []);
 
     const columns = [
-        { key: "tipodepiso", label: "Tipo de piso", rules: { required: true, minLength: 3 } },
+        { key: "tipopiso", label: "Tipo de piso", rules: { required: true, minLength: 3 } },
     ];
 
     const handleEdit = (id, data) => {
         setProcessing(true);
         patchTipoDePiso(id, data)
-            .then(() =>
-                getTiposDePisos().then(res =>
-                    setTiposPisos(Array.isArray(res.data) ? res.data : [])
-                )
-            )
+            .then(() => cargarDatos())
             .finally(() => {
                 setProcessing(false);
                 setMessage({ text: "Tipo de piso editado correctamente ✅", type: "success" });
@@ -43,11 +45,7 @@ export default function TiposPisosSection() {
     const handleDelete = (id) => {
         setProcessing(true);
         deleteTipoDePiso(id)
-            .then(() =>
-                getTiposDePisos().then(res =>
-                    setTiposPisos(Array.isArray(res.data) ? res.data : [])
-                )
-            )
+            .then(() => cargarDatos())
             .finally(() => {
                 setProcessing(false);
                 setMessage({ text: "Tipo de piso eliminado correctamente 🗑️", type: "success" });
@@ -58,9 +56,7 @@ export default function TiposPisosSection() {
         setProcessing(true);
         try {
             await createTipoDePiso(nuevo);
-            getTiposDePisos().then(res =>
-                setTiposPisos(Array.isArray(res.data) ? res.data : [])
-            );
+            cargarDatos();
             setMessage({ text: "Tipo de piso creado correctamente ➕", type: "success" });
         } catch (error) {
             setMessage({ text: "Error al crear el tipo de piso ❌", type: "error" });
@@ -87,7 +83,6 @@ export default function TiposPisosSection() {
                 onAdd={handleAdd}
             />
 
-            {/* Mensaje de acción en curso */}
             {processing && (
                 <ToastMessage
                     message={
@@ -102,7 +97,6 @@ export default function TiposPisosSection() {
                 />
             )}
 
-            {/* Mensajes de éxito/error */}
             {message && (
                 <ToastMessage
                     message={message.text}

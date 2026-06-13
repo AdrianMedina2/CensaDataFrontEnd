@@ -14,12 +14,18 @@ export default function DiscapacidadesSection() {
     const [message, setMessage] = useState(null);
     const [processing, setProcessing] = useState(false);
 
-    useEffect(() => {
+    const cargarDatos = () => {
         getDiscapacidades()
             .then(res => {
-                setDiscapacidades(Array.isArray(res.data) ? res.data : []);
+                const datos = Array.isArray(res.data) ? res.data : [];
+                const ordenados = datos.sort((a, b) => b.id - a.id);
+                setDiscapacidades(ordenados);
             })
             .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        cargarDatos();
     }, []);
 
     const columns = [
@@ -29,11 +35,7 @@ export default function DiscapacidadesSection() {
     const handleEdit = (id, data) => {
         setProcessing(true);
         patchDiscapacidad(id, data)
-            .then(() =>
-                getDiscapacidades().then(res =>
-                    setDiscapacidades(Array.isArray(res.data) ? res.data : [])
-                )
-            )
+            .then(() => cargarDatos())
             .finally(() => {
                 setProcessing(false);
                 setMessage({ text: "Discapacidad editada correctamente ✅", type: "success" });
@@ -43,11 +45,7 @@ export default function DiscapacidadesSection() {
     const handleDelete = (id) => {
         setProcessing(true);
         deleteDiscapacidad(id)
-            .then(() =>
-                getDiscapacidades().then(res =>
-                    setDiscapacidades(Array.isArray(res.data) ? res.data : [])
-                )
-            )
+            .then(() => cargarDatos())
             .finally(() => {
                 setProcessing(false);
                 setMessage({ text: "Discapacidad eliminada correctamente 🗑️", type: "success" });
@@ -58,9 +56,7 @@ export default function DiscapacidadesSection() {
         setProcessing(true);
         try {
             await createDiscapacidad(nuevo);
-            getDiscapacidades().then(res =>
-                setDiscapacidades(Array.isArray(res.data) ? res.data : [])
-            );
+            cargarDatos();
             setMessage({ text: "Discapacidad creada correctamente ➕", type: "success" });
         } catch (error) {
             setMessage({ text: "Error al crear la discapacidad ❌", type: "error" });
@@ -87,7 +83,6 @@ export default function DiscapacidadesSection() {
                 onAdd={handleAdd}
             />
 
-            {/* Mensaje de acción en curso */}
             {processing && (
                 <ToastMessage
                     message={
@@ -102,7 +97,6 @@ export default function DiscapacidadesSection() {
                 />
             )}
 
-            {/* Mensajes de éxito/error */}
             {message && (
                 <ToastMessage
                     message={message.text}

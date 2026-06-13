@@ -14,12 +14,18 @@ export default function EducacionSection() {
     const [message, setMessage] = useState(null);
     const [processing, setProcessing] = useState(false);
 
-    useEffect(() => {
+    const cargarDatos = () => {
         getNivelesEducativos()
             .then(res => {
-                setNivelesEducativos(Array.isArray(res.data) ? res.data : []);
+                const datos = Array.isArray(res.data) ? res.data : [];
+                const ordenados = datos.sort((a, b) => b.id - a.id);
+                setNivelesEducativos(ordenados);
             })
             .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        cargarDatos();
     }, []);
 
     const columns = [
@@ -31,9 +37,7 @@ export default function EducacionSection() {
         setProcessing(true);
         try {
             await patchNivelEducativo(id, data);
-            getNivelesEducativos().then(res =>
-                setNivelesEducativos(Array.isArray(res.data) ? res.data : [])
-            );
+            cargarDatos();
             setMessage({ text: "Nivel educativo editado correctamente ✅", type: "success" });
         } catch (error) {
             let errorMsg = "Error al editar el nivel educativo";
@@ -56,9 +60,7 @@ export default function EducacionSection() {
         setProcessing(true);
         try {
             await deleteNivelEducativo(id);
-            getNivelesEducativos().then(res =>
-                setNivelesEducativos(Array.isArray(res.data) ? res.data : [])
-            );
+            cargarDatos();
             setMessage({ text: "Nivel educativo eliminado correctamente 🗑️", type: "success" });
         } catch (error) {
             let errorMsg = "Error al eliminar el nivel educativo";
@@ -81,9 +83,7 @@ export default function EducacionSection() {
         setProcessing(true);
         try {
             await createNivelEducativo(nuevo);
-            getNivelesEducativos().then(res =>
-                setNivelesEducativos(Array.isArray(res.data) ? res.data : [])
-            );
+            cargarDatos();
             setMessage({ text: "Nivel educativo creado correctamente ➕", type: "success" });
         } catch (error) {
             let errorMsg = "Error al crear el nivel educativo";

@@ -6,6 +6,7 @@ import "./Login.css";
 function Login() {
     const [Correo, setCorreo] = useState(""); 
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
 
@@ -50,15 +51,23 @@ function Login() {
                 <div className="invalid-feedback">Usuario o Correo invalido</div>
             </div>
 
-            <div className="mb-3">
+            <div className="mb-3 position-relative">
                 <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     className="form-control"
                     placeholder="Ingrese su contraseña"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                 />
+                <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary position-absolute end-0 top-0 mt-1 me-2"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{ zIndex: 2 }}
+                >
+                    <i className={showPassword ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+                </button>
                 <div className="invalid-feedback">Ingrese su contraseña para continuar.</div>
             </div>
 

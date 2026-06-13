@@ -14,12 +14,18 @@ export default function EmpleoSection() {
     const [message, setMessage] = useState(null);
     const [processing, setProcessing] = useState(false);
 
-    useEffect(() => {
+    const cargarDatos = () => {
         getEmpleos()
             .then(res => {
-                setEmpleos(Array.isArray(res.data) ? res.data : []);
+                const datos = Array.isArray(res.data) ? res.data : [];
+                const ordenados = datos.sort((a, b) => b.id - a.id);
+                setEmpleos(ordenados);
             })
             .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        cargarDatos();
     }, []);
 
     const columns = [
@@ -29,11 +35,7 @@ export default function EmpleoSection() {
     const handleEdit = (id, data) => {
         setProcessing(true);
         patchEmpleo(id, data)
-            .then(() =>
-                getEmpleos().then(res =>
-                    setEmpleos(Array.isArray(res.data) ? res.data : [])
-                )
-            )
+            .then(() => cargarDatos())
             .finally(() => {
                 setProcessing(false);
                 setMessage({ text: "Empleo editado correctamente ✅", type: "success" });
@@ -43,11 +45,7 @@ export default function EmpleoSection() {
     const handleDelete = (id) => {
         setProcessing(true);
         deleteEmpleo(id)
-            .then(() =>
-                getEmpleos().then(res =>
-                    setEmpleos(Array.isArray(res.data) ? res.data : [])
-                )
-            )
+            .then(() => cargarDatos())
             .finally(() => {
                 setProcessing(false);
                 setMessage({ text: "Empleo eliminado correctamente 🗑️", type: "success" });
@@ -57,11 +55,8 @@ export default function EmpleoSection() {
     const handleAdd = async (nuevo) => {
         setProcessing(true);
         try {
-            // asegurar que siempre se mande estado: true
-            await createEmpleo({ ...nuevo, estado: true });
-            getEmpleos().then(res =>
-                setEmpleos(Array.isArray(res.data) ? res.data : [])
-            );
+            await createEmpleo({ ...nuevo});
+            cargarDatos();
             setMessage({ text: "Empleo creado correctamente ➕", type: "success" });
         } catch (error) {
             setMessage({ text: "Error al crear el empleo ❌", type: "error" });
@@ -78,7 +73,6 @@ export default function EmpleoSection() {
         );
     }
 
-
     return (
         <div>
             <EditableTable
@@ -89,7 +83,6 @@ export default function EmpleoSection() {
                 onAdd={handleAdd}
             />
 
-            {/* Mensaje de acción en curso */}
             {processing && (
                 <ToastMessage
                     message={
@@ -104,7 +97,6 @@ export default function EmpleoSection() {
                 />
             )}
 
-            {/* Mensajes de éxito/error */}
             {message && (
                 <ToastMessage
                     message={message.text}

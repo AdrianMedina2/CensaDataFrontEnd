@@ -137,7 +137,6 @@ export default function SidebarMenu() {
                         </>
                     )}
                 </NavLink>
-
             </div>
         </>
     );
@@ -145,23 +144,16 @@ export default function SidebarMenu() {
     const investigadorLinks = (
         <>
             <div className="sidebar-section">
-                <h6 className="text-uppercase text-muted px-3 mt-3 mb-2">Trabajo</h6>
-                <NavLink to="/proyectos" className="nav-link fs-5 text-white" onClick={handleNavClick}>
+                <h6 className="sidebar-section-title">Trabajo</h6>
+                <NavLink to="/encuestas" className="nav-link fs-5 text-white" onClick={handleNavClick}>
                     {({ isActive }) => (
                         <>
-                            <i className={`bi ${isActive ? "bi-folder-fill" : "bi-folder"} me-2`}></i>
-                            Mis Proyectos
+                            <i className={`bi ${isActive ? "bi-clipboard-check" : "bi-clipboard"} me-2`}></i>
+                            Encuestas
                         </>
                     )}
                 </NavLink>
-                <NavLink to="/reportes" className="nav-link fs-5 text-white" onClick={handleNavClick}>
-                    {({ isActive }) => (
-                        <>
-                            <i className={`bi ${isActive ? "bi-bar-chart-fill" : "bi-bar-chart"} me-2`}></i>
-                            Mis Reportes
-                        </>
-                    )}
-                </NavLink>
+
             </div>
         </>
     );

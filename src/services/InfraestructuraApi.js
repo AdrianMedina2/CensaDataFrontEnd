@@ -75,7 +75,7 @@ export const deleteTipoDeTecho = async (id) => {
 // Obtener todos los tipos de pisos
 export const getTiposDePisos = async () => {
     const res = await api.get("/api/tiposDePisos/");
-    return res.data;
+    return res.data.data;
 };
 
 // Obtener un tipo de piso por ID

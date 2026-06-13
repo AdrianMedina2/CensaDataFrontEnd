@@ -14,12 +14,18 @@ export default function MaterialesConstruccionSection() {
     const [message, setMessage] = useState(null);
     const [processing, setProcessing] = useState(false);
 
-    useEffect(() => {
+    const cargarDatos = () => {
         getMaterialesConstrucciones()
             .then(res => {
-                setMateriales(Array.isArray(res.data) ? res.data : []);
+                const datos = Array.isArray(res.data) ? res.data : [];
+                const ordenados = datos.sort((a, b) => b.id - a.id);
+                setMateriales(ordenados);
             })
             .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        cargarDatos();
     }, []);
 
     const columns = [
@@ -29,11 +35,7 @@ export default function MaterialesConstruccionSection() {
     const handleEdit = (id, data) => {
         setProcessing(true);
         patchMaterialConstruccion(id, data)
-            .then(() =>
-                getMaterialesConstrucciones().then(res =>
-                    setMateriales(Array.isArray(res.data) ? res.data : [])
-                )
-            )
+            .then(() => cargarDatos())
             .finally(() => {
                 setProcessing(false);
                 setMessage({ text: "Material editado correctamente ✅", type: "success" });
@@ -43,11 +45,7 @@ export default function MaterialesConstruccionSection() {
     const handleDelete = (id) => {
         setProcessing(true);
         deleteMaterialConstruccion(id)
-            .then(() =>
-                getMaterialesConstrucciones().then(res =>
-                    setMateriales(Array.isArray(res.data) ? res.data : [])
-                )
-            )
+            .then(() => cargarDatos())
             .finally(() => {
                 setProcessing(false);
                 setMessage({ text: "Material eliminado correctamente 🗑️", type: "success" });
@@ -58,9 +56,7 @@ export default function MaterialesConstruccionSection() {
         setProcessing(true);
         try {
             await createMaterialConstruccion(nuevo);
-            getMaterialesConstrucciones().then(res =>
-                setMateriales(Array.isArray(res.data) ? res.data : [])
-            );
+            cargarDatos();
             setMessage({ text: "Material creado correctamente ➕", type: "success" });
         } catch (error) {
             setMessage({ text: "Error al crear el material ❌", type: "error" });
@@ -87,7 +83,6 @@ export default function MaterialesConstruccionSection() {
                 onAdd={handleAdd}
             />
 
-            {/* Mensaje de acción en curso */}
             {processing && (
                 <ToastMessage
                     message={
@@ -102,7 +97,6 @@ export default function MaterialesConstruccionSection() {
                 />
             )}
 
-            {/* Mensajes de éxito/error */}
             {message && (
                 <ToastMessage
                     message={message.text}
