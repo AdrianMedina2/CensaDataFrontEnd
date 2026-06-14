@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import PersonaEmpadronadoForm from "../../components/Encuestas/PersonaEmpadronadoForm";
 import CasaForm from "../../components/Encuestas/CasaForm";
+import ConfirmModal from "../../components/ConfirmModal.jsx/ConfirmModal";
 import {
     getCensos,
     getBarrios,
@@ -28,7 +29,8 @@ export default function EncuestaForm() {
     const [empleos, setEmpleos] = useState([]);
     const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(true);
-
+    const [showDraftModal, setShowDraftModal] = useState(false);
+    const [draftData, setDraftData] = useState(null);
     const hoy = new Date().toISOString().split("T")[0];
 
     const [encuestainide, setEncuesta] = useState({
@@ -54,7 +56,7 @@ export default function EncuestaForm() {
         segundonombre: "",
         primerapellido: "",
         segundoapellido: "",
-        sexo: "",
+        sexo: "",   
         fechanacimiento: "",
     };
 
@@ -71,7 +73,14 @@ export default function EncuestaForm() {
     const [empadronados, setEmpadronados] = useState([{ ...emptyEmpadronado }]);
     const [activePersonaIndex, setActivePersonaIndex] = useState(0);
 
+    // 1. Cargar el draft al montar
     useEffect(() => {
+        const saved = localStorage.getItem("encuestaDraft");
+        if (saved) {
+            setDraftData(JSON.parse(saved));
+            setShowDraftModal(true);
+        }
+
         Promise.all([
             getCensos(),
             getBarrios(),
@@ -94,8 +103,7 @@ export default function EncuestaForm() {
                 setEstadosCiviles(estadosRes.data);
                 setNivelesEducativos(nivelesRes.data);
                 setEmpleos(empleosRes.data);
-                setInfraestructuras(infraRes); // porque ya devuelve el array mapeado
-
+                setInfraestructuras(infraRes);
                 setLoading(false);
             })
             .catch(err => {
@@ -104,7 +112,60 @@ export default function EncuestaForm() {
             });
     }, []);
 
+    // 2. Guardar cada vez que cambien los estados (solo si ya cargó)
+    useEffect(() => {
+        if (loading) return; // evita sobrescribir con vacío mientras carga
 
+        const data = {
+            Casa,
+            encuestainide,
+            personas,
+            empadronados,
+            activePersonaIndex
+        };
+        localStorage.setItem("encuestaDraft", JSON.stringify(data));
+    }, [Casa, encuestainide, personas, empadronados, activePersonaIndex, loading]);
+
+    const handleUseDraft = () => {
+        if (draftData) {
+            setCasa(draftData.Casa || Casa);
+            setEncuesta(draftData.encuestainide || encuestainide);
+            setPersonas(draftData.personas || personas);
+            setEmpadronados(draftData.empadronados || empadronados);
+            setActivePersonaIndex(draftData.activePersonaIndex || 0);
+        }
+        setShowDraftModal(false);
+    };
+
+    const handleDiscardDraft = () => {
+        localStorage.removeItem("encuestaDraft");
+        setShowDraftModal(false);
+    };
+
+    const handleReset = () => {
+        setSubmitted(false);
+
+        setEncuesta({
+            censoid: "",
+            fechainicio: hoy,
+            fechafin: hoy,
+            respuesta: "POSITIVA",
+        });
+
+        setCasa({
+            numcasa: "",
+            materialcontruccionid: "",
+            tipodetechoid: "",
+            tipodepisoid: "",
+            barrioid: "",
+            serviciodeagua: "",
+            serviciodeenergia: "",
+        });
+
+        setPersonas([{ ...emptyPersona }]);
+        setEmpadronados([{ ...emptyEmpadronado }]);
+        setActivePersonaIndex(0);
+    };
 
     const addPersona = () => {
         setPersonas((prev) => [...prev, { ...emptyPersona }]);
@@ -208,6 +269,8 @@ export default function EncuestaForm() {
 
             console.log("Data enviada:", data);
             await encuestasApi.create(data);
+            localStorage.removeItem("encuestaDraft");
+            handleReset()
             return;
         }
 
@@ -278,15 +341,22 @@ export default function EncuestaForm() {
             <h4 className="mt-4">Personas</h4>
             <div className="mb-3 d-flex flex-wrap gap-2">
                 {personas.map((_, i) => (
-                    <div key={i} className="d-flex align-items-center gap-1">
+                    <div
+                        key={i}
+                        className={`nav-item d-flex align-items-center px-2 py-1 border rounded ${activePersonaIndex === i ? "bg-primary text-white" : "bg-light"
+                            }`}
+                        style={{ borderRadius: "6px" }}
+                    >
                         <button
-                            className={`btn btn-sm ${activePersonaIndex === i ? "btn-primary" : "btn-outline-primary"}`}
+                            className="btn btn-link p-0 me-2 text-decoration-none"
+                            style={{ color: activePersonaIndex === i ? "white" : "black" }}
                             onClick={() => setActivePersonaIndex(i)}
                         >
                             Persona {i + 1}
                         </button>
                         <button
-                            className="btn btn-sm btn-danger"
+                            className="btn-close btn-sm"
+                            style={{ filter: activePersonaIndex === i ? "invert(1)" : "none" }}
                             onClick={() => {
                                 const newPersonas = personas.filter((_, idx) => idx !== i);
                                 const newEmpadronados = empadronados.filter((_, idx) => idx !== i);
@@ -294,16 +364,13 @@ export default function EncuestaForm() {
                                 setEmpadronados(newEmpadronados);
                                 setActivePersonaIndex(Math.max(0, i - 1));
                             }}
-                        >
-                            Eliminar
-                        </button>
+                        />
                     </div>
                 ))}
                 <button className="btn btn-sm btn-success" onClick={addPersona}>
-                    Añadir Persona
+                    ➕ Añadir Persona
                 </button>
             </div>
-
             {personas[activePersonaIndex] && (
                 <PersonaEmpadronadoForm
                     index={activePersonaIndex}
@@ -330,10 +397,20 @@ export default function EncuestaForm() {
                     }}
                 />
             )}
-
             <button className="btn btn-success mt-4" onClick={handleSubmit}>
                 Enviar Encuesta
             </button>
+
+            {showDraftModal && (
+                <ConfirmModal
+                    show={showDraftModal}
+                    title="Continuar borrador"
+                    message="Se encontró un borrador guardado. ¿Quieres continuar con ese o empezar una nueva encuesta?"
+                    onConfirm={handleUseDraft}
+                    onCancel={handleDiscardDraft}
+                />
+            )}
+
         </div>
     );
 }

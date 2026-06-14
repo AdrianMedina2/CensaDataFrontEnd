@@ -14,6 +14,7 @@ export default function PersonaEmpadronadoForm({
     empleos,
     submitted,
 }) {
+    const nivelesUnicos = [...new Set(nivelesEducativos.map(n => n.niveleducativo))];
     return (
         <div className="card mb-4 shadow-sm">
             <div className="card-body">
@@ -177,23 +178,50 @@ export default function PersonaEmpadronadoForm({
                         )}
                     </div>
                     <div className="col-md-6">
-                        <label className="form-label">Nivel Educativo</label>
-                        <Select
-                            options={nivelesEducativos.map(n => ({ value: n.id, label: n.niveleducativo }))}
-                            value={nivelesEducativos.find(n => n.id === parseInt(empadronado.niveleducativoid))
-                                ? { value: empadronado.niveleducativoid, label: nivelesEducativos.find(n => n.id === parseInt(empadronado.niveleducativoid)).niveleducativo }
-                                : null}
-                            onChange={(selected) =>
-                                onChangeEmpadronado(index, { ...empadronado, niveleducativoid: selected ? selected.value : "" })
-                            }
-                            placeholder="Seleccione..."
-                            isClearable
-                            className={submitted && !empadronado.niveleducativoid ? "is-invalid" : ""}
-                        />
-                        {submitted && !empadronado.niveleducativoid && (
-                            <div className="invalid-feedback d-block">Debe seleccionar nivel educativo.</div>
-                        )}
+                        <div className="row">
+                            <div className="col-6">
+                                <label className="form-label">Nivel Educativo</label>
+                                <Select
+                                    options={nivelesUnicos.map(n => ({ value: n, label: n }))}
+                                    value={empadronado.niveleducativo ? { value: empadronado.niveleducativo, label: empadronado.niveleducativo } : null}
+                                    onChange={(selected) => {
+                                        const nivel = selected ? selected.value : "";
+                                        onChangeEmpadronado(index, {
+                                            ...empadronado,
+                                            niveleducativo: nivel,
+                                            grado: nivel === "Ninguno" ? 0 : "" // si es Ninguno, grado = 0
+                                        });
+                                    }}
+                                    placeholder="Seleccione nivel..."
+                                    className={submitted && !empadronado.niveleducativo ? "is-invalid" : ""}
+                                />
+                                {submitted && !empadronado.niveleducativo && (
+                                    <div className="invalid-feedback d-block">Debe seleccionar nivel educativo.</div>
+                                )}
+                            </div>
+
+                            <div className="col-6">
+                                <label className="form-label">Grado</label>
+                                <Select
+                                    options={nivelesEducativos
+                                        .filter(n => n.niveleducativo === empadronado.niveleducativo)
+                                        .map(n => ({ value: n.grado, label: n.grado }))}
+                                    value={empadronado.grado ? { value: empadronado.grado, label: empadronado.grado } : null}
+                                    onChange={(selected) =>
+                                        onChangeEmpadronado(index, { ...empadronado, grado: selected ? selected.value : "" })
+                                    }
+                                    placeholder="Seleccione grado..."
+                                    isDisabled={empadronado.niveleducativo === "Ninguno"} // desactiva si es Ninguno
+                                    className={submitted && empadronado.niveleducativo !== "Ninguno" && !empadronado.grado ? "is-invalid" : ""}
+                                />
+                                {submitted && empadronado.niveleducativo !== "Ninguno" && !empadronado.grado && (
+                                    <div className="invalid-feedback d-block">Debe seleccionar grado.</div>
+                                )}
+                            </div>
+                        </div>
                     </div>
+
+
                     <div className="col-md-6">
                         <label className="form-label">Ingreso Personal</label>
                         <ValidatedInput
@@ -213,7 +241,6 @@ export default function PersonaEmpadronadoForm({
                             }
                         />
                     </div>
-
                 </div>
             </div>
         </div>
