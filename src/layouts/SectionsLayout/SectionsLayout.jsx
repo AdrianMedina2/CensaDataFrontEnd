@@ -12,8 +12,8 @@ export default function SectionLayout({ title, sections }) {
     }, []);
 
     return (
-        <div className="container mt-4">
-            <h2 className="fw-bold">{title}</h2>
+        <div className="container">
+            <h2 className="fw-bold mt-2 mb-4">{title}</h2>
 
             {isMobile ? (
                 // Dropdown en móvil

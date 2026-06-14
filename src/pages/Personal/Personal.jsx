@@ -14,5 +14,5 @@ export default function Personal() {
         { key: "discapacidad", label: "Discapacidades", component: DiscapacidadesSection },
     ];
 
-    return <SectionLayout title="Gestión de Información Personal" sections={sections} />;
+    return <SectionLayout title="ℹ️ Gestión de Información Personal" sections={sections} />;
 }

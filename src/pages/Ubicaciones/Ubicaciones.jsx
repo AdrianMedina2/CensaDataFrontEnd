@@ -10,5 +10,5 @@ export default function Ubicaciones() {
         { key: "barrios", label: "Barrios", component: BarriosSection },
     ];
 
-    return <SectionLayout title="Gestión de Ubicaciones" sections={sections} />;
+    return <SectionLayout title="📍 Gestión de Ubicaciones" sections={sections} />;
 }

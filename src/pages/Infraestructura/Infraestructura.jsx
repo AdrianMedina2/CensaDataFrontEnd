@@ -10,5 +10,5 @@ export default function Infraestructura() {
         { key: "pisos", label: "Tipos de Pisos", component: TiposPisosSection },
     ];
 
-    return <SectionLayout title="Gestión de Infraestructura" sections={sections} />;
+    return <SectionLayout title="🏠 Gestión de Infraestructura" sections={sections} />;
 }

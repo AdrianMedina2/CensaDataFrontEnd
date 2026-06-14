@@ -191,7 +191,7 @@ export default function Censos() {
     if (error) return <p>{error}</p>;
 
     return (
-        <div className="container mt-4">
+        <div className="container">
 
             {processing && (
                 <ToastMessage
@@ -228,7 +228,7 @@ export default function Censos() {
                 />
             )}
 
-            <h2 className="fw-bold mb-4">Gestionar Censos</h2>
+            <h2 className="fw-bold mt-2 mb-4">🗂️ Gestionar Censos</h2>
             {/* Formulario de creación arriba */}
             <h3 className="fw-bold">Crear nuevo censo</h3>
             <form onSubmit={handleCreate} className="row g-3 mb-4">

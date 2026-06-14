@@ -204,7 +204,7 @@ export default function Investigadores() {
 
     return (
         <div>
-            <h2 className="fw-bold mb-4">Gestionar investigadores</h2>
+            <h2 className="fw-bold mt-2 mb-4">👤 Gestionar investigadores</h2>
             <button
                 className="btn btn-brand mb-3"
                 onClick={() => {
@@ -447,7 +447,6 @@ export default function Investigadores() {
                     </div>
                 </div>
             )}
-
         </div >
     );
 }
