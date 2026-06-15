@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import PersonaEmpadronadoForm from "../../components/Encuestas/PersonaEmpadronadoForm";
 import CasaForm from "../../components/Encuestas/CasaForm";
 import ConfirmModal from "../../components/ConfirmModal.jsx/ConfirmModal";
+import "./Encuestas.css";
 import {
     getCensos,
     getBarrios,
@@ -14,7 +15,28 @@ import {
     getEmpleos,
     getRelacionesParentescos,
     getInfraestructuras,
+    createTipoDePiso,
+    createTipoDeTecho,
+    createMaterialConstruccion,
+    createInfraestructura,
 } from "../../services";
+
+const hasValidDraft = (draft) => {
+    const isEmptyCasa = !draft.Casa || Object.values(draft.Casa).every(v => v === "" || v === null);
+    const isDefaultEncuesta = draft.encuestainide?.respuesta === "POSITIVA" && !draft.encuestainide?.censoid;
+
+    const hasPersonas = draft.personas?.some(p =>
+        Object.values(p).some(v => v !== "" && v !== null)
+    );
+
+    const hasEmpadronados = draft.empadronados?.some(e =>
+        Object.values(e).some(v => v !== "" && v !== null && v !== 0)
+    );
+
+    return (!isEmptyCasa || hasPersonas || hasEmpadronados || (!!draft.encuestainide?.censoid));
+};
+
+
 
 export default function EncuestaForm() {
     const [censos, setCensos] = useState([]);
@@ -32,6 +54,8 @@ export default function EncuestaForm() {
     const [showDraftModal, setShowDraftModal] = useState(false);
     const [draftData, setDraftData] = useState(null);
     const hoy = new Date().toISOString().split("T")[0];
+    const [loadingSubmit, setLoadingSubmit] = useState(false);
+    const [successSubmit, setSuccessSubmit] = useState(false);
 
     const [encuestainide, setEncuesta] = useState({
         censoid: "",
@@ -56,7 +80,7 @@ export default function EncuestaForm() {
         segundonombre: "",
         primerapellido: "",
         segundoapellido: "",
-        sexo: "",   
+        sexo: "",
         fechanacimiento: "",
     };
 
@@ -66,19 +90,32 @@ export default function EncuestaForm() {
         empleoid: "",
         niveleducativoid: "",
         numerocedula: "",
-        ingresopersonal: "",
+        ingresopersonal: 0,
     };
 
     const [personas, setPersonas] = useState([{ ...emptyPersona }]);
     const [empadronados, setEmpadronados] = useState([{ ...emptyEmpadronado }]);
     const [activePersonaIndex, setActivePersonaIndex] = useState(0);
 
+    useEffect(() => {
+        if (successSubmit) {
+            const timer = setTimeout(() => setSuccessSubmit(false), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [successSubmit]);
+
     // 1. Cargar el draft al montar
     useEffect(() => {
         const saved = localStorage.getItem("encuestaDraft");
         if (saved) {
-            setDraftData(JSON.parse(saved));
-            setShowDraftModal(true);
+            const parsed = JSON.parse(saved);
+
+            if (hasValidDraft(parsed)) {
+                setDraftData(parsed);
+                setShowDraftModal(true);
+            } else {
+                localStorage.removeItem("encuestaDraft"); // limpiar basura vacía
+            }
         }
 
         Promise.all([
@@ -123,7 +160,12 @@ export default function EncuestaForm() {
             empadronados,
             activePersonaIndex
         };
-        localStorage.setItem("encuestaDraft", JSON.stringify(data));
+
+        if (hasValidDraft(data)) {
+            localStorage.setItem("encuestaDraft", JSON.stringify(data));
+        } else {
+            localStorage.removeItem("encuestaDraft"); // limpiar si está vacío
+        }
     }, [Casa, encuestainide, personas, empadronados, activePersonaIndex, loading]);
 
     const handleUseDraft = () => {
@@ -202,15 +244,22 @@ export default function EncuestaForm() {
 
             if (isEmptyRow(p, e)) continue;
 
+            // Persona obligatoria
             if (!p.primernombre || p.primernombre.length < 3) valido = false;
             if (!p.primerapellido || p.primerapellido.length < 3) valido = false;
             if (!p.sexo) valido = false;
             if (!p.fechanacimiento) valido = false;
 
+            // Empadronado obligatorio
             if (!e.relacionid) valido = false;
             if (!e.estadocivilid) valido = false;
             if (!e.empleoid) valido = false;
             if (!e.niveleducativoid) valido = false;
+
+            // Cédula opcional, pero válida si se llena
+            if (e.numerocedula && e.numerocedula.length < 10) valido = false;
+
+            // Ingreso opcional, pero válido si se llena
             if (e.ingresopersonal !== "" && e.ingresopersonal !== undefined) {
                 if (Number(e.ingresopersonal) < 0) valido = false;
             }
@@ -224,29 +273,62 @@ export default function EncuestaForm() {
 
         const casaValida = validateCasa();
         const personasValidas = validatePersonas();
+        if (!casaValida || !personasValidas) return;
 
-        if (!casaValida || !personasValidas) {
-            // Mostrar errores en UI (submitted = true) y no enviar
-            return;
-        }
+        setLoadingSubmit(true);
 
-        // Si hay infraestructuras cargadas, intentar hacer el match
-        if (infraestructuras && infraestructuras.length > 0) {
-            const matId = Number(Casa.materialcontruccionid);
-            const techoId = Number(Casa.tipodetechoid);
-            const pisoId = Number(Casa.tipodepisoid);
+        try {
+            let materialId = Casa.materialcontruccionid;
+            let techoId = Casa.tipodetechoid;
+            let pisoId = Casa.tipodepisoid;
 
-            const infraestructuraMatch = infraestructuras.find(
+            if (materialId === "otro" && Casa.nuevoMaterial) {
+                await createMaterialConstruccion({ materialcontruccion: Casa.nuevoMaterial });
+                const materialesRes = await getMaterialesConstrucciones();
+                const materiales = materialesRes.data ?? materialesRes;
+                const nuevoMaterial = materiales.find(m => m.materialcontruccion === Casa.nuevoMaterial);
+                materialId = nuevoMaterial?.id;
+            }
+
+            if (techoId === "otro" && Casa.nuevoTecho) {
+                await createTipoDeTecho({ tipodetecho: Casa.nuevoTecho });
+                const techosRes = await getTiposDeTechos();
+                const techos = techosRes.data ?? techosRes;
+                const nuevoTecho = techos.find(t => t.tipodetecho === Casa.nuevoTecho);
+                techoId = nuevoTecho?.id;
+            }
+
+            if (pisoId === "otro" && Casa.nuevoPiso) {
+                await createTipoDePiso({ tipopiso: Casa.nuevoPiso });
+                const pisosRes = await getTiposDePisos();
+                const pisos = pisosRes.data ?? pisosRes;
+                const nuevoPiso = pisos.find(p => p.tipopiso === Casa.nuevoPiso);
+                pisoId = nuevoPiso?.id;
+            }
+
+            let infraestructuraMatch = infraestructuras.find(
                 (i) =>
-                    String(i.materialcontruccionid) === Casa.materialcontruccionid &&
-                    String(i.tipodetechoid) === Casa.tipodetechoid &&
-                    String(i.tipodepisoid) === Casa.tipodepisoid
+                    Number(i.materialcontruccionid) === Number(materialId) &&
+                    Number(i.tipodetechoid) === Number(techoId) &&
+                    Number(i.tipodepisoid) === Number(pisoId)
             );
 
-
             if (!infraestructuraMatch) {
-                alert("No existe una infraestructura con esa combinación de Material, Techo y Piso");
-                return;
+                const payloadInfra = {
+                    materialcontruccionid: Number(materialId),
+                    tipodetechoid: Number(techoId),
+                    tipodepisoid: Number(pisoId),
+                };
+
+                await createInfraestructura(payloadInfra);
+
+                const infraResAll = await getInfraestructuras();
+                infraestructuraMatch = infraResAll.find(
+                    (i) =>
+                        Number(i.materialcontruccionid) === Number(materialId) &&
+                        Number(i.tipodetechoid) === Number(techoId) &&
+                        Number(i.tipodepisoid) === Number(pisoId)
+                );
             }
 
             const CasaFinal = {
@@ -266,31 +348,15 @@ export default function EncuestaForm() {
                     return acc;
                 }, {}),
             };
-
-            console.log("Data enviada:", data);
             await encuestasApi.create(data);
             localStorage.removeItem("encuestaDraft");
-            handleReset()
-            return;
+            handleReset();
+            setSuccessSubmit(true);
+        } finally {
+            setLoadingSubmit(false);
         }
-
-        // Si no hay infraestructuras para chequear, enviar sin infraestructuraid
-        const data = {
-            Casa,
-            encuestainide,
-            personas: personas.reduce((acc, p, i) => {
-                acc[`persona${i + 1}`] = p;
-                return acc;
-            }, {}),
-            empadronados: empadronados.reduce((acc, e, i) => {
-                acc[`empadronado${i + 1}`] = e;
-                return acc;
-            }, {}),
-        };
-
-        console.log("Data enviada:", data);
-        await encuestasApi.create(data);
     };
+
 
     if (loading) {
         return (
@@ -304,12 +370,12 @@ export default function EncuestaForm() {
     }
 
     return (
-        <div className="p-4">
-            <h2>Nueva Encuesta</h2>
+        <div>
+            <h2 className="mt-2 mb-4 fw-bold">📋 Nueva Encuesta</h2>
 
-            <h4>Datos de la Encuesta</h4>
+            <h4 className="mt-2 mb-4 fw-bold">Datos de la Encuesta</h4>
             <div className="mb-3">
-                <label className="form-label">Censo</label>
+                <label className="form-label">Censo de la encuesta</label>
                 <select
                     className={`form-select ${submitted && !encuestainide.censoid ? "is-invalid" : ""}`}
                     value={encuestainide.censoid}
@@ -338,7 +404,7 @@ export default function EncuestaForm() {
                 barrios={barrios}
             />
 
-            <h4 className="mt-4">Personas</h4>
+            <h4 className="mt-4 mb-4 fw-bold">Personas</h4>
             <div className="mb-3 d-flex flex-wrap gap-2">
                 {personas.map((_, i) => (
                     <div
@@ -411,6 +477,22 @@ export default function EncuestaForm() {
                 />
             )}
 
+            {loadingSubmit && (
+                <div className="overlay-loading">
+                    <div className="spinner-border text-light" role="status">
+                        <span className="visually-hidden">Enviando encuesta...</span>
+                    </div>
+                    <p className="text-light mt-2">Enviando encuesta...</p>
+                </div>
+            )}
+
+            {successSubmit && (
+                <div className="overlay-success">
+                    <div className="alert alert-success text-center">
+                        Encuesta añadida con éxito ✅
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

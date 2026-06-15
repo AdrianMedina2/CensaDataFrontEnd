@@ -135,3 +135,13 @@ export const getInfraestructuras = async () => {
             "Desconocido",
     }));
 };
+
+export const createInfraestructura = async ({ materialcontruccionid, tipodetechoid, tipodepisoid }) => {
+    const res = await api.post("/api/Infraestructuras/", {
+        materialcontruccionid: Number(materialcontruccionid),
+        tipodetechoid: Number(tipodetechoid),
+        tipodepisoid: Number(tipodepisoid),
+        estado: true
+    });
+    return res.data.data; // devuelve el objeto creado con su id
+};

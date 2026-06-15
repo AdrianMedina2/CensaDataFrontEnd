@@ -100,6 +100,38 @@ export default function Home() {
                                 </div>
                             </div>
                         </TiltCard>
+                        {/* Acceso rápido al borrador */}
+                        {localStorage.getItem("encuestaDraft") && (
+                            <TiltCard className="col-md-6 col-lg-3">
+                                <div className="card shadow-sm h-100 fade-in text-center bg-warning text-dark border-0 rounded-4">
+                                    <div className="card-body d-flex flex-column align-items-center">
+                                        <i className="bi bi-file-earmark-text display-4 mb-3 text-dark"></i>
+                                        <h5 className="card-title fw-bold">Borrador guardado</h5>
+                                        <p className="card-text mb-4">¿Quieres continuar con tu borrador?</p>
+                                        <div className="d-flex justify-content-center gap-3 w-100">
+                                            <Link
+                                                to="/encuestas"
+                                                className="btn btn-dark btn-sm rounded-pill shadow-sm d-flex align-items-center"
+                                            >
+                                                <i className="bi bi-play-fill me-2"></i>
+                                                Continuar
+                                            </Link>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-danger btn-sm rounded-pill shadow-sm d-flex align-items-center"
+                                                onClick={() => {
+                                                    localStorage.removeItem("encuestaDraft");
+                                                    window.location.reload();
+                                                }}
+                                            >
+                                                <i className="bi bi-trash me-2"></i>
+                                                Borrar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </TiltCard>
+                        )}
                     </>
                 )}
             </div>

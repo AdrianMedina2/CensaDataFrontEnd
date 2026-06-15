@@ -5,7 +5,7 @@ import Select from "react-select";
 export default function CasaForm({ Casa, setCasa, submitted, materiales, techos, pisos, barrios }) {
     return (
         <>
-            <h4>Datos de la Casa</h4>
+            <h4 className="mt-2 mb-4 fw-bold">Datos de la Casa</h4>
             <div className="mb-2">
                 <label className="form-label">Número de Casa</label>
                 <ValidatedInput
@@ -15,47 +15,100 @@ export default function CasaForm({ Casa, setCasa, submitted, materiales, techos,
                 />
             </div>
             <div className="row mb-2">
+                {/* Material de Construcción */}
                 <div className="col-md-4">
                     <label className="form-label">Material de Construcción</label>
                     <Select
-                        options={materiales.map(m => ({ value: String(m.id), label: m.materialcontruccion }))}
-                        value={materiales.find(m => String(m.id) === Casa.materialcontruccionid)
-                            ? { value: Casa.materialcontruccionid, label: materiales.find(m => String(m.id) === Casa.materialcontruccionid).materialcontruccion }
-                            : null}
-                        onChange={(selected) => setCasa({ ...Casa, materialcontruccionid: selected ? String(selected.value) : "" })}
+                        options={[
+                            ...materiales.map(m => ({ value: m.id, label: m.materialcontruccion })),
+                            { value: "otro", label: "Otro..." }
+                        ]}
+                        value={
+                            materiales.find(m => m.id === Casa.materialcontruccionid)
+                                ? { value: Casa.materialcontruccionid, label: materiales.find(m => m.id === Casa.materialcontruccionid).materialcontruccion }
+                                : Casa.materialcontruccionid === "otro"
+                                    ? { value: "otro", label: "Otro..." }
+                                    : null
+                        }
+                        onChange={(selected) =>
+                            setCasa({ ...Casa, materialcontruccionid: selected ? selected.value : "" })
+                        }
                         placeholder="Seleccione material..."
                         className={submitted && !Casa.materialcontruccionid ? "is-invalid" : ""}
                     />
+                    {Casa.materialcontruccionid === "otro" && (
+                        <ValidatedInput
+                            value={Casa.nuevoMaterial || ""}
+                            onChange={(val) => setCasa({ ...Casa, nuevoMaterial: val })}
+                            error={submitted && !Casa.nuevoMaterial ? "Ingrese nuevo material" : ""}
+                        />
+                    )}
                     {submitted && !Casa.materialcontruccionid && (
                         <div className="invalid-feedback d-block">Seleccione material</div>
                     )}
                 </div>
+
+                {/* Tipo de Techo */}
                 <div className="col-md-4">
                     <label className="form-label">Tipo de Techo</label>
                     <Select
-                        options={techos.map(t => ({ value: String(t.id), label: t.tipodetecho }))}
-                        value={techos.find(t => String(t.id) === Casa.tipodetechoid)
-                            ? { value: Casa.tipodetechoid, label: techos.find(t => String(t.id) === Casa.tipodetechoid).tipodetecho }
-                            : null}
-                        onChange={(selected) => setCasa({ ...Casa, tipodetechoid: selected ? String(selected.value) : "" })}
+                        options={[
+                            ...techos.map(t => ({ value: t.id, label: t.tipodetecho })),
+                            { value: "otro", label: "Otro..." }
+                        ]}
+                        value={
+                            techos.find(t => t.id === Casa.tipodetechoid)
+                                ? { value: Casa.tipodetechoid, label: techos.find(t => t.id === Casa.tipodetechoid).tipodetecho }
+                                : Casa.tipodetechoid === "otro"
+                                    ? { value: "otro", label: "Otro..." }
+                                    : null
+                        }
+                        onChange={(selected) =>
+                            setCasa({ ...Casa, tipodetechoid: selected ? selected.value : "" })
+                        }
                         placeholder="Seleccione techo..."
                         className={submitted && !Casa.tipodetechoid ? "is-invalid" : ""}
                     />
+                    {Casa.tipodetechoid === "otro" && (
+                        <ValidatedInput
+                            value={Casa.nuevoTecho || ""}
+                            onChange={(val) => setCasa({ ...Casa, nuevoTecho: val })}
+                            error={submitted && !Casa.nuevoTecho ? "Ingrese nuevo techo" : ""}
+                        />
+                    )}
                     {submitted && !Casa.tipodetechoid && (
                         <div className="invalid-feedback d-block">Seleccione techo</div>
                     )}
                 </div>
+
+                {/* Tipo de Piso */}
                 <div className="col-md-4">
                     <label className="form-label">Tipo de Piso</label>
                     <Select
-                        options={pisos.map(p => ({ value: String(p.id), label: p.tipopiso }))}
-                        value={pisos.find(p => String(p.id) === Casa.tipodepisoid)
-                            ? { value: Casa.tipodepisoid, label: pisos.find(p => String(p.id) === Casa.tipodepisoid).tipopiso }
-                            : null}
-                        onChange={(selected) => setCasa({ ...Casa, tipodepisoid: selected ? String(selected.value) : "" })}
+                        options={[
+                            ...pisos.map(p => ({ value: p.id, label: p.tipopiso })),
+                            { value: "otro", label: "Otro..." }
+                        ]}
+                        value={
+                            pisos.find(p => p.id === Casa.tipodepisoid)
+                                ? { value: Casa.tipodepisoid, label: pisos.find(p => p.id === Casa.tipodepisoid).tipopiso }
+                                : Casa.tipodepisoid === "otro"
+                                    ? { value: "otro", label: "Otro..." }
+                                    : null
+                        }
+                        onChange={(selected) =>
+                            setCasa({ ...Casa, tipodepisoid: selected ? selected.value : "" })
+                        }
                         placeholder="Seleccione piso..."
                         className={submitted && !Casa.tipodepisoid ? "is-invalid" : ""}
                     />
+                    {Casa.tipodepisoid === "otro" && (
+                        <ValidatedInput
+                            value={Casa.nuevoPiso || ""}
+                            onChange={(val) => setCasa({ ...Casa, nuevoPiso: val })}
+                            error={submitted && !Casa.nuevoPiso ? "Ingrese nuevo piso" : ""}
+                        />
+                    )}
                     {submitted && !Casa.tipodepisoid && (
                         <div className="invalid-feedback d-block">Seleccione piso</div>
                     )}
