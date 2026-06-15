@@ -1,7 +1,8 @@
 import axios from "axios";
+import { getBaseURL } from "./getBaseURL";
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE,
+    baseURL: getBaseURL(),
 });
 
 // Interceptor para añadir token automáticamente
@@ -22,7 +23,7 @@ api.interceptors.response.use(
             if (refresh) {
                 try {
                     const res = await axios.post(
-                        `${import.meta.env.VITE_API_BASE}/api/token/refresh/`,
+                        `${getBaseURL()}/api/token/refresh/`,
                         { refresh }
                     );
                     localStorage.setItem("accessToken", res.data.access);
@@ -37,6 +38,5 @@ api.interceptors.response.use(
         return Promise.reject(error);
     }
 );
-
 
 export default api;

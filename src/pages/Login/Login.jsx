@@ -62,6 +62,7 @@ function Login() {
                 />
                 <button
                     type="button"
+                    aria-label="Mostrar contraseña"
                     className="btn btn-sm btn-outline-secondary position-absolute end-0 top-0 mt-1 me-2"
                     onClick={() => setShowPassword(!showPassword)}
                     style={{ zIndex: 2 }}
