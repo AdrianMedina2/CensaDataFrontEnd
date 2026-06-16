@@ -27,3 +27,14 @@ export const getReportePDF = async (tiporeporte) => {
         throw error;
     }
 };
+
+// PUT para actualizar IsPublic de un reporte
+export const updateReporteIsPublic = async (tiporeporte) => {
+    try {
+        const res = await api.put("/api/reportes/IsPublic/", { tiporeporte });
+        return res.data;
+    } catch (error) {
+        console.error("Error actualizando IsPublic:", error);
+        throw error;
+    }
+};

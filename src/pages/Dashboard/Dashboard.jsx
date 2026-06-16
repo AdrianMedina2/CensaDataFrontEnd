@@ -12,7 +12,7 @@ import {
     ArcElement,
     PointElement,
 } from "chart.js";
-import { getEstadistica, getReportes, getReportePDF } from "../../services/";
+import { getEstadistica, getReportes, getReportePDF, updateReporteIsPublic } from "../../services/";
 import "./dashboard.css"
 ChartJS.register(
     Title,
@@ -51,7 +51,6 @@ export default function Dashboard() {
 
     useEffect(() => {
         const fetchData = async () => {
-            setLoading(true);
             const results = {};
             for (const tipo of tipos) {
                 try {
@@ -62,7 +61,6 @@ export default function Dashboard() {
                 }
             }
             setGraficos(results);
-            setLoading(false);
         };
         fetchData();
 
@@ -77,6 +75,22 @@ export default function Dashboard() {
         };
         fetchReportes();
     }, []);
+
+    const handleUpdateIsPublic = async () => {
+        if (selectedReporte) {
+            try {
+                setLoading(true);
+                const result = await updateReporteIsPublic(selectedReporte);
+                setConfirmation(`✅ Reporte "${selectedReporte}" actualizado como público.`);
+                setTimeout(() => setConfirmation(""), 3000);
+            } catch (error) {
+                setConfirmation("❌ Error al actualizar el reporte.");
+                setTimeout(() => setConfirmation(""), 3000);
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
 
     const handleDownload = async () => {
         if (selectedReporte) {
@@ -239,14 +253,27 @@ export default function Dashboard() {
                 </select>
                 <button
                     onClick={handleDownload}
-                    className="btn btn-primary"
+                    className="btn btn-brand"
                     disabled={!selectedReporte}
                 >
                     Descargar PDF
                 </button>
+                {/* Botón de marcar como público */}
+                <button
+                    onClick={handleUpdateIsPublic}
+                    className="btn btn-brand ms-2"
+                    disabled={
+                        !selectedReporte ||
+                        reportes.find((r) => r.tiporeporte === selectedReporte)?.espublico
+                    }
+                >
+                    {reportes.find((r) => r.tiporeporte === selectedReporte)?.espublico
+                        ? "Reporte ya público"
+                        : "Marcar como Público"}
+                </button>
             </div>
 
-            {/* Selector de tipo de gráfico */}
+            { }
             <div className="mb-4">
                 <label className="me-2 fw-bold">Tipo de gráfico:</label>
                 <select
