@@ -50,17 +50,19 @@ export default function Dashboard() {
     const [confirmation, setConfirmation] = useState("");
 
     useEffect(() => {
+        // cargar estadísticas una por una
         const fetchData = async () => {
-            const results = {};
             for (const tipo of tipos) {
                 try {
                     const res = await getEstadistica(tipo);
-                    results[tipo] = res.data;
+                    setGraficos(prev => ({
+                        ...prev,
+                        [tipo]: res.data
+                    }));
                 } catch (error) {
                     console.error("Error cargando", tipo, error);
                 }
             }
-            setGraficos(results);
         };
         fetchData();
 
@@ -75,6 +77,7 @@ export default function Dashboard() {
         };
         fetchReportes();
     }, []);
+
 
     const handleUpdateIsPublic = async () => {
         if (selectedReporte) {
@@ -293,7 +296,14 @@ export default function Dashboard() {
                         <div className="card shadow-sm h-100">
                             <div className="card-body">
                                 {renderGrafico(graficos[tipo]) || (
-                                    <p>Cargando {tipo}...</p>
+                                    <div className="text-center my-3">
+                                        <p className="fw-bold mb-2">Cargando gráfico {tipo}...</p>
+                                        <div className="d-flex justify-content-center">
+                                            <div className="spinner-border text-brand" role="status">
+                                                <span className="visually-hidden">Cargando {tipo}...</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                         </div>
