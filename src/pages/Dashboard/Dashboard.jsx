@@ -218,98 +218,99 @@ export default function Dashboard() {
         }
     };
 
-    return (
-        <div className="container">
-            <h2 className="fw-bold mt-2 mb-4">📊 Dashboard de Estadísticas</h2>
+           return (
+    <div className="container-fluid">
+        <h2 className="fw-bold mt-2 mb-4">📊 Dashboard de Estadísticas</h2>
 
-            {/* Overlay de carga */}
-            {loading && (
-                <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-dark bg-opacity-50" style={{ zIndex: 1050 }}>
-                    <div className="spinner-border text-light me-2" role="status"></div>
-                    <span className="text-white fw-bold fs-4">Cargando...</span>
-                </div>
-            )}
-
-            {/* Mensaje de confirmación centrado */}
-            {confirmation && (
-                <div className="overlay-success">
-                    <div className="alert alert-success text-center">
-                        {confirmation}
-                    </div>
-                </div>
-            )}
-
-            {/* Selector de reporte y botón de descarga */}
-            <div className="mb-4 d-flex align-items-center">
-                <label className="me-2 fw-bold">Tipo de reporte:</label>
-                <select
-                    value={selectedReporte}
-                    onChange={(e) => setSelectedReporte(e.target.value)}
-                    className="form-select w-auto d-inline-block me-2"
-                >
-                    <option value="">Seleccione un reporte</option>
-                    {reportes.map((r) => (
-                        <option key={r.id} value={r.tiporeporte}>
-                            {r.tiporeporte}
-                        </option>
-                    ))}
-                </select>
-                <button
-                    onClick={handleDownload}
-                    className="btn btn-brand"
-                    disabled={!selectedReporte}
-                >
-                    Descargar PDF
-                </button>
-                {/* Botón de marcar como público */}
-                <button
-                    onClick={handleUpdateIsPublic}
-                    className="btn btn-brand ms-2"
-                    disabled={
-                        !selectedReporte ||
-                        reportes.find((r) => r.tiporeporte === selectedReporte)?.espublico
-                    }
-                >
-                    {reportes.find((r) => r.tiporeporte === selectedReporte)?.espublico
-                        ? "Reporte ya público"
-                        : "Marcar como Público"}
-                </button>
+        {/* Overlay de carga */}
+        {loading && (
+            <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-dark bg-opacity-50" style={{ zIndex: 1050 }}>
+                <div className="spinner-border text-light me-2" role="status"></div>
+                <span className="text-white fw-bold fs-4">Cargando...</span>
             </div>
+        )}
 
-            { }
-            <div className="mb-4">
-                <label className="me-2 fw-bold">Tipo de gráfico:</label>
-                <select
-                    value={chartType}
-                    onChange={(e) => setChartType(e.target.value)}
-                    className="form-select w-auto d-inline-block"
-                >
-                    <option value="bar">Barras</option>
-                    <option value="line">Líneas</option>
-                    <option value="pie">Pastel</option>
-                </select>
+        {/* Mensaje de confirmación centrado */}
+        {confirmation && (
+            <div className="overlay-success">
+                <div className="alert alert-success text-center">
+                    {confirmation}
+                </div>
             </div>
+        )}
 
-            <div className="row">
-                {tipos.map((tipo, idx) => (
-                    <div key={idx} className="col-md-6 mb-4">
-                        <div className="card shadow-sm h-100">
-                            <div className="card-body">
-                                {renderGrafico(graficos[tipo]) || (
-                                    <div className="text-center my-3">
-                                        <p className="fw-bold mb-2">Cargando gráfico {tipo}...</p>
-                                        <div className="d-flex justify-content-center">
-                                            <div className="spinner-border text-brand" role="status">
-                                                <span className="visually-hidden">Cargando {tipo}...</span>
-                                            </div>
+        {/* Selector de reporte y botones */}
+        <div className="mb-4 d-flex flex-column flex-md-row align-items-start align-items-md-center">
+            <label className="me-2 fw-bold">Tipo de reporte:</label>
+            <select
+                value={selectedReporte}
+                onChange={(e) => setSelectedReporte(e.target.value)}
+                className="form-select w-100 w-md-auto d-inline-block me-md-2 mb-2 mb-md-0"
+            >
+                <option value="">Seleccione un reporte</option>
+                {reportes.map((r) => (
+                    <option key={r.id} value={r.tiporeporte}>
+                        {r.tiporeporte}
+                    </option>
+                ))}
+            </select>
+            <button
+                onClick={handleDownload}
+                className="btn btn-brand mb-2 mb-md-0"
+                disabled={!selectedReporte}
+            >
+                Descargar PDF
+            </button>
+            {/* Botón de marcar como público */}
+            <button
+                onClick={handleUpdateIsPublic}
+                className="btn btn-brand ms-md-2"
+                disabled={
+                    !selectedReporte ||
+                    reportes.find((r) => r.tiporeporte === selectedReporte)?.espublico
+                }
+            >
+                {reportes.find((r) => r.tiporeporte === selectedReporte)?.espublico
+                    ? "Reporte ya público"
+                    : "Marcar como Público"}
+            </button>
+        </div>
+
+        {/* Selector de tipo de gráfico */}
+        <div className="mb-4 d-flex flex-column flex-md-row align-items-start align-items-md-center">
+            <label className="me-2 fw-bold">Tipo de gráfico:</label>
+            <select
+                value={chartType}
+                onChange={(e) => setChartType(e.target.value)}
+                className="form-select w-100 w-md-auto d-inline-block"
+            >
+                <option value="bar">Barras</option>
+                <option value="line">Líneas</option>
+                <option value="pie">Pastel</option>
+            </select>
+        </div>
+
+        {/* Gráficos */}
+        <div className="row">
+            {tipos.map((tipo, idx) => (
+                <div key={idx} className="col-12 col-md-6 mb-4">
+                    <div className="card shadow-sm h-100">
+                        <div className="card-body">
+                            {renderGrafico(graficos[tipo]) || (
+                                <div className="text-center my-3">
+                                    <p className="fw-bold mb-2">Cargando gráfico {tipo}...</p>
+                                    <div className="d-flex justify-content-center">
+                                        <div className="spinner-border text-brand" role="status">
+                                            <span className="visually-hidden">Cargando {tipo}...</span>
                                         </div>
                                     </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
                         </div>
                     </div>
-                ))}
-            </div>
+                </div>
+            ))}
         </div>
-    );
+    </div>
+);
 }
