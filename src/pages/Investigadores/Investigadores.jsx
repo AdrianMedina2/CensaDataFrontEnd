@@ -238,7 +238,12 @@ export default function Investigadores() {
             {/* Mensaje de acción en curso */}
             {processing && (
                 <ToastMessage
-                    message="Procesando acción, por favor espera…"
+                    message={
+                        <div className="d-flex align-items-center">
+                            <div className="spinner-border spinner-border-sm me-2" role="status"></div>
+                            Procesando acción, por favor espera…
+                        </div>
+                    }
                     type="warning"
                     autohide={false}
                     onClose={() => setProcessing(false)}
@@ -248,18 +253,14 @@ export default function Investigadores() {
             {/* Mensaje de resultado */}
             {message && (
                 <ToastMessage
-                    message={
-                        <div className="d-flex align-items-center">
-                            <div className="spinner-border spinner-border-sm me-2" role="status"></div>
-                            Procesando acción, por favor espera…
-                        </div>}
+                    message={message.text}
                     type={message.type}
                     autohide={true}
                     delay={3000}
                     onClose={() => setMessage(null)}
                 />
             )}
-
+            
             {/* Modal Bootstrap con validaciones */}
             {showModal && (
                 <div className="modal show d-block" tabIndex="-1">
