@@ -15,6 +15,7 @@ import Ubicaciones from "./pages/Ubicaciones/Ubicaciones.jsx";
 import Infraestructura from "./pages/Infraestructura/Infraestructura.jsx";
 import Dashboard from "./pages/Dashboard/Dashboard.jsx";
 import Encuestas from "./pages/Encuestas/Encuestas.jsx";
+import Manual from "./pages/Manual/Manual.jsx";
 
 function App() {
     const { initializing } = useContext(AuthContext);
@@ -44,6 +45,16 @@ function App() {
                     <RequireAuth>
                         <AuthRole allowed={["ADMINISTRADOR", "INVESTIGADOR"]}>
                             <MainLayout><Home /></MainLayout>
+                        </AuthRole>
+                    </RequireAuth>
+                }
+            />
+            <Route
+                path="/manual/:tipo"
+                element={
+                    <RequireAuth>
+                        <AuthRole allowed={["ADMINISTRADOR", "INVESTIGADOR"]}>
+                            <MainLayout><Manual /></MainLayout>
                         </AuthRole>
                     </RequireAuth>
                 }
