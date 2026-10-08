@@ -121,14 +121,6 @@ export default function SidebarMenu() {
                         </>
                     )}
                 </NavLink>
-                <NavLink to="/ubicaciones" className="nav-link fs-5 text-white" onClick={handleNavClick}>
-                    {({ isActive }) => (
-                        <>
-                            <i className={`bi ${isActive ? "bi-geo-alt-fill" : "bi-geo-alt"} me-2`}></i>
-                            Ubicaciones
-                        </>
-                    )}
-                </NavLink>
                 <NavLink to="/infraestructura" className="nav-link fs-5 text-white" onClick={handleNavClick}>
                     {({ isActive }) => (
                         <>
@@ -137,9 +129,26 @@ export default function SidebarMenu() {
                         </>
                     )}
                 </NavLink>
+                <NavLink to="/estudiantil" className="nav-link fs-5 text-white" onClick={handleNavClick}>
+                    {({ isActive }) => (
+                        <>
+                            <i className={`bi ${isActive ? "bi-mortarboard-fill" : "bi-mortarboard"} me-2`}></i>
+                            Estudiantil
+                        </>
+                    )}
+                </NavLink>
+                <NavLink to="/extracurricular" className="nav-link fs-5 text-white" onClick={handleNavClick}>
+                    {({ isActive }) => (
+                        <>
+                            <i className={`bi ${isActive ? "bi-calendar-event-fill" : "bi-calendar-event"} me-2`}></i>
+                            Extracurricular
+                        </>
+                    )}
+                </NavLink>
             </div>
         </>
     );
+
 
     const investigadorLinks = (
         <>
@@ -150,7 +159,7 @@ export default function SidebarMenu() {
                         <>
                             <i className={`bi ${isActive ? "bi-clipboard-check" : "bi-clipboard"} me-2`}></i>
                             Encuestas
-                        </>
+                        </>     
                     )}
                 </NavLink>
 

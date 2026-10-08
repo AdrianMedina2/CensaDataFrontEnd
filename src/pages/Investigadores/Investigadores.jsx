@@ -263,7 +263,7 @@ export default function Investigadores() {
             
             {/* Modal Bootstrap con validaciones */}
             {showModal && (
-                <div className="modal show d-block" tabIndex="-1">
+                <div className="modal show d-block fade-in fast" tabIndex="-1">
                     <div className="modal-dialog modal-lg modal-dialog-centered">
                         <div className="modal-content shadow-lg border-0">
                             <form onSubmit={handleAdd} noValidate>

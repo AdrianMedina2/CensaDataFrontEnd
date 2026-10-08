@@ -12,7 +12,7 @@ export default function SectionLayout({ title, sections }) {
     }, []);
 
     return (
-        <div className="container">
+        <div className="container-fluid">
             <h2 className="fw-bold mt-2 mb-4">{title}</h2>
 
             {isMobile ? (
@@ -30,11 +30,11 @@ export default function SectionLayout({ title, sections }) {
                 </select>
             ) : (
                 // Botones en desktop
-                <div className="btn-group mb-3">
+                <div className="btn-group d-flex mb-3">
                     {sections.map((s) => (
                         <button
                             key={s.key}
-                            className={`btn ${active === s.key ? "btn-brand" : "btn-outline-primary"}`}
+                            className={`btn flex-fill ${active === s.key ? "btn-brand" : "btn-outline-primary"}`}
                             onClick={() => setActive(s.key)}
                         >
                             {s.label}

@@ -16,6 +16,8 @@ import Infraestructura from "./pages/Infraestructura/Infraestructura.jsx";
 import Dashboard from "./pages/Dashboard/Dashboard.jsx";
 import Encuestas from "./pages/Encuestas/Encuestas.jsx";
 import Manual from "./pages/Manual/Manual.jsx";
+import Estudiantil from "./pages/Estudiantil/Estudiantil.jsx";
+import Extracurricular from "./pages/Extracurricular/Extracurricular.jsx";
 
 function App() {
     const { initializing } = useContext(AuthContext);
@@ -105,6 +107,26 @@ function App() {
                     <RequireAuth>
                         <AuthRole allowed={["ADMINISTRADOR"]}>
                             <MainLayout><Infraestructura /></MainLayout>
+                        </AuthRole>
+                    </RequireAuth>
+                }
+            />
+            <Route
+                path="/estudiantil"
+                element={
+                    <RequireAuth>
+                        <AuthRole allowed={["ADMINISTRADOR"]}>
+                            <MainLayout><Estudiantil /></MainLayout>
+                        </AuthRole>
+                    </RequireAuth>
+                }
+            />
+            <Route
+                path="/extracurricular"
+                element={
+                    <RequireAuth>
+                        <AuthRole allowed={["ADMINISTRADOR"]}>
+                            <MainLayout><Extracurricular /></MainLayout>
                         </AuthRole>
                     </RequireAuth>
                 }
