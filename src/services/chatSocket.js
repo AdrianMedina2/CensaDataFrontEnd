@@ -19,9 +19,17 @@ export function connect(senderId, destinatarioId, onMessage, onStatusChange) {
         const payload = JSON.parse(e.data);
 
         if (payload.type === "historial") {
-            onMessage({ type: "historial", mensajes: payload.mensajes });
+            const mensajes = payload.mensajes.map(m => ({
+                ...m,
+                fechaLocal: new Date(m.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
+            }));
+            onMessage({ type: "historial", mensajes });
         } else if (payload.type === "chat_message") {
-            onMessage({ type: "chat_message", mensaje: payload });
+            const mensaje = {
+                ...payload,
+                fechaLocal: new Date(payload.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
+            };
+            onMessage({ type: "chat_message", mensaje });
         }
     };
 }
@@ -43,7 +51,6 @@ export function sendMessage(texto, inv1, inv2) {
                 sexo: inv2.sexo
             }
         };
-        console.log("Enviando mensaje:", payload);
         socket.send(JSON.stringify(payload));
     }
 }

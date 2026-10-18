@@ -4,42 +4,61 @@ import { getInvestigadores, connect, sendMessage, close } from "../../services";
 
 function ChatPage() {
     const { auth } = useAuth();
-    const userId = auth.user?.id;
+    const userId = Number(auth.user?.id);
 
     const [investigadores, setInvestigadores] = useState([]);
     const [search, setSearch] = useState("");
     const [destinatarioId, setDestinatarioId] = useState(null);
     const [mensajes, setMensajes] = useState([]);
     const [texto, setTexto] = useState("");
+    const [unread, setUnread] = useState({});
 
     const chatRef = useRef(null);
 
     useEffect(() => {
         getInvestigadores().then(res => {
             const lista = Array.isArray(res.data) ? res.data : res;
-            setInvestigadores(lista);
+            setInvestigadores(lista.map(i => ({ ...i, id: Number(i.id) })));
         });
     }, []);
 
     useEffect(() => {
-        if (userId && destinatarioId) {
-            connect(
-                userId,
-                destinatarioId,
-                (payload) => {
-                    if (payload.type === "historial") {
-                        setMensajes(payload.mensajes);
-                    } else if (payload.type === "chat_message") {
-                        setMensajes((prev) => [...prev, payload.mensaje]);
+        if (!userId) return;
+
+        const currentDest = destinatarioId !== null ? Number(destinatarioId) : null;
+
+        connect(
+            userId,
+            currentDest,
+            (payload) => {
+                if (payload.type === "historial") {
+                    setMensajes(Array.isArray(payload.mensajes) ? payload.mensajes : []);
+                } else if (payload.type === "chat_message") {
+                    const invId = Number(payload.mensaje.investigador1.id_inves);
+                    const invDest = Number(payload.mensaje.investigador2.id_inves);
+
+                    if (
+                        currentDest &&
+                        (
+                            (invId === userId && invDest === currentDest) ||
+                            (invDest === userId && invId === currentDest)
+                        )
+                    ) {
+                        setMensajes(prev => [...prev, payload.mensaje]);
                     }
-                },
-                (status) => console.log("Estado:", status)
-            );
-        }
+
+                    if (invId !== userId && invId !== destinatarioId) {
+                        setUnread(prev => ({ ...prev, [invId]: true }));
+                    }
+
+                }
+            },
+            (status) => console.log("Estado:", status)
+        );
+
         return () => close();
     }, [userId, destinatarioId]);
 
-    // Scroll automático al último mensaje
     useEffect(() => {
         if (chatRef.current) {
             chatRef.current.scrollTop = chatRef.current.scrollHeight;
@@ -48,24 +67,21 @@ function ChatPage() {
 
     const handleSend = () => {
         if (texto.trim() && destinatarioId) {
-            const inv1 = investigadores.find(i => i.id === userId);
-            const inv2 = investigadores.find(i => i.id === destinatarioId);
+            const inv1 = investigadores.find(i => Number(i.id) === Number(userId));
+            const inv2 = investigadores.find(i => Number(i.id) === Number(destinatarioId));
 
             if (inv1 && inv2) {
                 sendMessage(texto, inv1, inv2);
                 setTexto("");
-            } else {
-                console.error("No se encontraron los investigadores completos");
             }
         }
     };
 
-    const destinatario = investigadores.find(i => i.id === destinatarioId);
+    const destinatario = investigadores.find(i => Number(i.id) === Number(destinatarioId));
 
     return (
         <div className="chat-page d-flex flex-column h-100">
             <div className="row flex-grow-1 h-100">
-                {/* Sidebar izquierda en escritorio */}
                 <div className="col-md-3 border-end bg-light p-3 h-100 d-none d-md-block">
                     <input
                         type="text"
@@ -83,20 +99,23 @@ function ChatPage() {
                             .map(inv => (
                                 <button
                                     key={inv.id}
-                                    className={`list-group-item list-group-item-action ${destinatarioId === inv.id ? "active" : ""}`}
-                                    onClick={() => setDestinatarioId(inv.id)}
+                                    className={`list-group-item list-group-item-action ${Number(destinatarioId) === inv.id ? "active" : ""}`}
+                                    onClick={() => {
+                                        setDestinatarioId(inv.id);
+                                        setMensajes([]);
+                                        setUnread(prev => ({ ...prev, [inv.id]: false }));
+                                    }}
                                 >
                                     <strong>{inv.primernombre} {inv.primerapellido}</strong>
+                                    {unread[inv.id] && <span className="badge bg-danger ms-2">Nuevo</span>}
                                 </button>
                             ))}
                     </div>
                 </div>
 
-                {/* Panel de chat derecha */}
                 <div className="col-12 col-md-9 d-flex flex-column p-3 h-100">
                     {destinatarioId ? (
                         <>
-                            {/* Header */}
                             <div className="d-flex align-items-center border-bottom pb-2 mb-3">
                                 <button
                                     className="btn btn-outline-secondary btn-sm me-2"
@@ -109,7 +128,6 @@ function ChatPage() {
                                 </h5>
                             </div>
 
-                            {/* Mensajes */}
                             <div
                                 ref={chatRef}
                                 className="flex-grow-1 overflow-auto mb-3 p-3 bg-white border rounded"
@@ -119,19 +137,20 @@ function ChatPage() {
                                     {mensajes.map((m, i) => (
                                         <li
                                             key={i}
-                                            className={`p-2 mb-2 rounded ${m.investigador1?.id_inves === userId
+                                            className={`p-2 mb-2 rounded ${
+                                                Number(m.investigador1?.id_inves) === userId
                                                     ? "bg-primary text-white ms-auto text-end"
                                                     : "bg-light text-dark me-auto"
-                                                }`}
+                                            }`}
                                             style={{ maxWidth: "70%" }}
                                         >
-                                            {m.mensaje}
+                                            <div>{m.mensaje}</div>
+                                            <small className="text-muted d-block">{m.fechaLocal}</small>
                                         </li>
                                     ))}
                                 </ul>
                             </div>
 
-                            {/* Input */}
                             <div className="input-group">
                                 <input
                                     type="text"
@@ -148,7 +167,6 @@ function ChatPage() {
                         </>
                     ) : (
                         <>
-                            {/* Lista de investigadores en móviles */}
                             <div className="d-md-none d-flex flex-column align-items-center">
                                 <input
                                     type="text"
@@ -168,9 +186,14 @@ function ChatPage() {
                                             <button
                                                 key={inv.id}
                                                 className="list-group-item list-group-item-action text-center fs-5"
-                                                onClick={() => setDestinatarioId(inv.id)}
+                                                onClick={() => {
+                                                    setDestinatarioId(inv.id);
+                                                    setMensajes([]);
+                                                    setUnread(prev => ({ ...prev, [inv.id]: false }));
+                                                }}
                                             >
                                                 <strong>{inv.primernombre} {inv.primerapellido}</strong>
+                                                {unread[inv.id] && <span className="badge bg-danger ms-2">Nuevo</span>}
                                             </button>
                                         ))}
                                 </div>
