@@ -18,10 +18,10 @@ import Encuestas from "./pages/Encuestas/Encuestas.jsx";
 import Manual from "./pages/Manual/Manual.jsx";
 import Estudiantil from "./pages/Estudiantil/Estudiantil.jsx";
 import Extracurricular from "./pages/Extracurricular/Extracurricular.jsx";
+import ChatPage from "./pages/ChatPage/ChatPage.jsx";
 
 function App() {
     const { initializing } = useContext(AuthContext);
-
     if (initializing) return <div>Comprobando sesión...</div>;
 
     return (
@@ -147,6 +147,16 @@ function App() {
                     <RequireAuth>
                         <AuthRole allowed={["INVESTIGADOR"]}>
                             <MainLayout><Encuestas /></MainLayout>
+                        </AuthRole>
+                    </RequireAuth>
+                }
+            />
+            <Route
+                path="/chat"
+                element={
+                    <RequireAuth>
+                        <AuthRole allowed={["INVESTIGADOR"]}>
+                            <MainLayout><ChatPage /></MainLayout>
                         </AuthRole>
                     </RequireAuth>
                 }

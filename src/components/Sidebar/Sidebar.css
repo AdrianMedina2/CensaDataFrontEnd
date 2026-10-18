@@ -10,42 +10,17 @@
     left: 0;
     height: 100vh;
     overflow: hidden;
-    z-index: 1030;
+    z-index: 1041;
     background: var(--bs-dark, #0d6efd);
     color: #fff;
 }
 
-/* Wrapper del logo duplicado */
-.sidebar-logo-wrapper {
-    height: var(--navbar-initial-height);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    padding: 0.25rem;
-    z-index: 1035;
-    pointer-events: none;
-}
-
-/* Logo duplicado (oculto por defecto) */
-.sidebar-logo {
-    height: calc(var(--navbar-initial-height) * 0.57);
-    width: auto;
-    object-fit: contain;
-    opacity: 0;
-    transform: translateY(-6px);
-    transition: opacity .18s ease, transform .18s ease;
-    pointer-events: none;
-}
-
-/* Contenido interno con scroll y padding para quedar visualmente debajo de la navbar */
+/* Contenido interno con scroll */
 .sidebar-inner {
     height: calc(100vh - var(--navbar-initial-height));
     overflow-y: auto;
-    padding-top: 0;
-    /* el padding visual ya lo maneja el logo-wrapper */
     box-sizing: border-box;
-    padding-bottom: 1rem;
+    margin-top: var(--navbar-initial-height);
 }
 
 /* Links */
@@ -64,16 +39,6 @@
 /* Placeholder ancho en layout */
 .d-none.d-md-block[style] {
     width: 220px;
-}
-
-/* Asegurar que main no tenga margin-top forzado */
-main {
-    margin-top: 0 !important;
-}
-
-/* Navbar por encima si se superponen */
-.navbar {
-    z-index: 1040;
 }
 
 .sidebar-section-title {

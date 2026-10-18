@@ -3,7 +3,7 @@ import api from "../utils/axiosInstance";
 // Obtener todos los administradores
 export async function getAdministradores() {
     const res = await api.get("/api/administradores/");
-    return res.data;
+    return res.data.data;
 }
 
 // Obtener un administrador por id
