@@ -7,8 +7,9 @@ import api from "../utils/axiosInstance";
 // Obtener todos los investigadores
 export async function getInvestigadores() {
     const res = await api.get("/api/investigadores/");
-    return res.data;
+    return res.data.data; 
 }
+
 
 // Obtener un investigador por id
 export async function getInvestigadorById(id) {

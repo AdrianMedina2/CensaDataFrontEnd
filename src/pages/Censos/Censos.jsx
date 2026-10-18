@@ -15,6 +15,7 @@ export default function Censos() {
     const [deleteId, setDeleteId] = useState(null);
     const [submittedCreate, setSubmittedCreate] = useState(false);
     const [submittedEdit, setSubmittedEdit] = useState(false);
+    const [showCreateModal, setShowCreateModal] = useState(false);
     const hoy = new Date();
     const yyyy = hoy.getUTCFullYear();
     const mm = String(hoy.getUTCMonth() + 1).padStart(2, "0");
@@ -113,10 +114,13 @@ export default function Censos() {
             });
             setSubmittedCreate(false);
             setMessage({ type: "success", text: "Censo creado exitosamente ✅" });
+
+            setShowCreateModal(false);
         } catch (err) {
             console.error("Error al crear censo:", err.response?.data || err);
             setMessage({ type: "danger", text: "Error al crear censo ❌" });
         }
+
 
         setProcessing(false);
     };
@@ -228,78 +232,122 @@ export default function Censos() {
                 />
             )}
 
-            <h2 className="fw-bold mt-2 mb-4">🗂️ Gestionar Censos</h2>
-            {/* Formulario de creación arriba */}
-            <h3 className="fw-bold">Crear nuevo censo</h3>
-            <form onSubmit={handleCreate} className="row g-3 mb-4">
-                <div className="col-md-3">
-                    <label className="form-label">Nombre</label>
-                    <ValidatedInput
-                        type="text"
-                        value={formData.nombrecenso}
-                        onChange={(val) => setFormData(prev => ({ ...prev, nombrecenso: val }))}
-                        error={
-                            submittedCreate && (!formData.nombrecenso || formData.nombrecenso.length < 3)
-                                ? "El nombre debe tener al menos 3 caracteres"
-                                : ""
-                        }
-                    />
-                </div>
-                <div className="col-md-3">
-                    <label className="form-label">Población requerida</label>
-                    <ValidatedInput
-                        type="number"
-                        value={formData.poblaciontotal}
-                        onChange={(val) => setFormData(prev => ({ ...prev, poblaciontotal: val }))}
-                        error={
-                            submittedCreate && (!formData.poblaciontotal || parseInt(formData.poblaciontotal) <= 0)
-                                ? "La población requerida debe ser mayor a 0"
-                                : ""
-                        }
-                    />
-                </div>
-                <div className="col-md-3">
-                    <label className="form-label">Inicio</label>
-                    <ValidatedInput
-                        type="date"
-                        value={formData.fechainiciocenso}
-                        onChange={(val) => setFormData(prev => ({ ...prev, fechainiciocenso: val }))}
-                        error={
-                            submittedCreate && !formData.fechainiciocenso
-                                ? "Selecciona una fecha de inicio válida"
-                                : submittedCreate && (() => {
-                                    const hoyUTC = new Date();
-                                    hoyUTC.setUTCHours(0, 0, 0, 0);
+            <h2 className="fw-bold mt-2 mb-4 d-flex justify-content-between align-items-center">
+                🗂️ Gestionar Censos
+                <button
+                    className="btn btn-brand"
+                    onClick={() => setShowCreateModal(true)}
+                >
+                    Crear nuevo censo
+                </button>
+            </h2>
 
-                                    return new Date(formData.fechainiciocenso + "T00:00:00Z") < hoyUTC;
-                                })()
-                                    ? "La fecha de inicio no puede ser anterior a hoy"
-                                    : ""
-                        }
-                    />
-                </div>
-                <div className="col-md-3">
-                    <label className="form-label">Fin</label>
-                    <ValidatedInput
-                        type="date"
-                        value={formData.fechafincenso}
-                        onChange={(val) => setFormData(prev => ({ ...prev, fechafincenso: val }))}
-                        error={
-                            submittedCreate && !formData.fechafincenso
-                                ? "Selecciona una fecha de finalización válida"
-                                : submittedCreate && new Date(formData.fechafincenso) < new Date(formData.fechainiciocenso)
-                                    ? "La fecha de fin no puede ser anterior a la de inicio"
-                                    : ""
-                        }
-                    />
-                </div>
+            {showCreateModal && (
+                <div className="modal show d-block fade-in fast" tabIndex="-1">
+                    <div className="modal-dialog modal-lg modal-dialog-centered">
+                        <div className="modal-content shadow-lg border-0">
+                            <form onSubmit={handleCreate} noValidate>
+                                <div className="modal-header bg-primary text-white">
+                                    <h5 className="modal-title">
+                                        <i className="bi bi-folder-plus me-2"></i> Nuevo Censo
+                                    </h5>
+                                    <button
+                                        type="button"
+                                        className="btn-close btn-close-white"
+                                        onClick={() => setShowCreateModal(false)}
+                                    ></button>
+                                </div>
 
-                <div className="col-12">
-                    <button type="submit" className="btn btn-brand w-100">
-                        Crear activo
-                    </button>
+                                <div className="modal-body">
+                                    <div className="row g-3">
+                                        {/* Nombre */}
+                                        <div className="col-md-6">
+                                            <label className="form-label fw-bold">Nombre</label>
+                                            <ValidatedInput
+                                                type="text"
+                                                value={formData.nombrecenso}
+                                                onChange={(val) => setFormData(prev => ({ ...prev, nombrecenso: val }))}
+                                                error={
+                                                    submittedCreate && (!formData.nombrecenso || formData.nombrecenso.length < 3)
+                                                        ? "El nombre debe tener al menos 3 caracteres"
+                                                        : ""
+                                                }
+                                            />
+                                        </div>
+
+                                        {/* Población requerida */}
+                                        <div className="col-md-6">
+                                            <label className="form-label fw-bold">Población requerida</label>
+                                            <ValidatedInput
+                                                type="number"
+                                                value={formData.poblaciontotal}
+                                                onChange={(val) => setFormData(prev => ({ ...prev, poblaciontotal: val }))}
+                                                error={
+                                                    submittedCreate && (!formData.poblaciontotal || parseInt(formData.poblaciontotal) <= 0)
+                                                        ? "La población requerida debe ser mayor a 0"
+                                                        : ""
+                                                }
+                                            />
+                                        </div>
+
+                                        {/* Fecha inicio */}
+                                        <div className="col-md-6">
+                                            <label className="form-label fw-bold">Inicio</label>
+                                            <ValidatedInput
+                                                type="date"
+                                                value={formData.fechainiciocenso}
+                                                onChange={(val) => setFormData(prev => ({ ...prev, fechainiciocenso: val }))}
+                                                error={
+                                                    submittedCreate && !formData.fechainiciocenso
+                                                        ? "Selecciona una fecha de inicio válida"
+                                                        : submittedCreate && (() => {
+                                                            const hoyUTC = new Date();
+                                                            hoyUTC.setUTCHours(0, 0, 0, 0);
+                                                            return new Date(formData.fechainiciocenso + "T00:00:00Z") < hoyUTC;
+                                                        })()
+                                                            ? "La fecha de inicio no puede ser anterior a hoy"
+                                                            : ""
+                                                }
+                                            />
+                                        </div>
+
+                                        {/* Fecha fin */}
+                                        <div className="col-md-6">
+                                            <label className="form-label fw-bold">Fin</label>
+                                            <ValidatedInput
+                                                type="date"
+                                                value={formData.fechafincenso}
+                                                onChange={(val) => setFormData(prev => ({ ...prev, fechafincenso: val }))}
+                                                error={
+                                                    submittedCreate && !formData.fechafincenso
+                                                        ? "Selecciona una fecha de finalización válida"
+                                                        : submittedCreate && new Date(formData.fechafincenso) < new Date(formData.fechainiciocenso)
+                                                            ? "La fecha de fin no puede ser anterior a la de inicio"
+                                                            : ""
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="modal-footer">
+                                    <button type="submit" className="btn btn-success hover-lift">
+                                        Crear activo
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary hover-lift"
+                                        onClick={() => setShowCreateModal(false)}
+                                    >
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-            </form>
+            )}
+
 
             <h3 className="fw-bold">Censos activos</h3>
             <div className="row mt-3">
@@ -397,6 +445,7 @@ export default function Censos() {
                         </TiltCard>
                     ))}
             </div>
+
         </div>
     );
 }

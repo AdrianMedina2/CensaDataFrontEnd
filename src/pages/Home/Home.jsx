@@ -36,14 +36,16 @@ export default function Home() {
                             <p className="card-text">
                                 Aprende a utilizar CensaData paso a paso.
                             </p>
-                            <Link to="/guia" className="btn btn-light rounded-pill">
-                                Ver Guía
+                            <Link
+                                to={`/manual/${role?.toLowerCase()}`}
+                                className="btn btn-light rounded-pill"
+                            >
+                                Ver Manual
                             </Link>
                         </div>
                     </div>
                 </TiltCard>
-
-                {role === "ADMINISTRADOR" && (
+                    {role === "ADMINISTRADOR" && (
                     <>
                         <TiltCard className="col-md-6 col-lg-3">
                             <div className="card shadow-sm h-100 fade-in text-center bg-brand text-white">

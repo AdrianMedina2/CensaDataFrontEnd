@@ -1,0 +1,23 @@
+:root {
+    --navbar-height: 70px;
+    --footer-height: 40px;
+    --sidebar-width: 220px;
+}
+
+.main-content {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    /* reserva espacio para navbar y footer */
+    margin-top: var(--navbar-height);
+    margin-bottom: var(--footer-height);
+    height: calc(100vh - var(--navbar-height) - var(--footer-height));
+    overflow: auto;
+}
+
+/* Solo en escritorio se deja espacio para la sidebar */
+@media (min-width: 768px) {
+    .main-content {
+        margin-left: var(--sidebar-width);
+    }
+}

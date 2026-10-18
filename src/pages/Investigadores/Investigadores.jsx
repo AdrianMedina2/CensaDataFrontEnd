@@ -18,7 +18,7 @@ export default function Investigadores() {
     const [message, setMessage] = useState(null);
     const [processing, setProcessing] = useState(false);
     const [shakeFields, setShakeFields] = useState([]);
-
+    const [showPassword, setShowPassword] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [validated, setValidated] = useState(false);
     const [formData, setFormData] = useState({
@@ -36,11 +36,12 @@ export default function Investigadores() {
         Promise.all([getInvestigadores(), getAdministradores()])
             .then(([investigadoresRes, administradoresRes]) => {
                 console.log("Investigadores cargados:", investigadoresRes);
-                setInvestigadores(Array.isArray(investigadoresRes.data) ? investigadoresRes.data : []);
-                setAdministradores(Array.isArray(administradoresRes.data) ? administradoresRes.data : []);
+                setInvestigadores(Array.isArray(investigadoresRes) ? investigadoresRes : []);
+                setAdministradores(Array.isArray(administradoresRes) ? administradoresRes : []);
             })
             .finally(() => setLoading(false));
     }, []);
+
 
     const columns = [
         { key: "primernombre", label: "Nombre", rules: { required: true, minLength: 3 } },
@@ -67,8 +68,9 @@ export default function Investigadores() {
         setProcessing(true);
         patchInvestigador(id, data)
             .then(() => getInvestigadores().then(res =>
-                setInvestigadores(Array.isArray(res.data) ? res.data : [])
+                setInvestigadores(Array.isArray(res) ? res : [])
             ))
+
             .finally(() => {
                 setProcessing(false);
                 setMessage({ text: "Investigador editado correctamente ✅", type: "success" });
@@ -80,7 +82,7 @@ export default function Investigadores() {
         setProcessing(true);
         deleteInvestigador(id)
             .then(() => getInvestigadores().then(res =>
-                setInvestigadores(Array.isArray(res.data) ? res.data : [])
+                setInvestigadores(Array.isArray(res) ? res : [])
             ))
             .finally(() => {
                 setProcessing(false);
@@ -144,8 +146,9 @@ export default function Investigadores() {
             await createInvestigador(nuevo);
 
             getInvestigadores().then(res =>
-                setInvestigadores(Array.isArray(res.data) ? res.data : [])
+                setInvestigadores(Array.isArray(res) ? res : [])
             );
+
             setMessage({ text: "Investigador creado correctamente ➕", type: "success" });
 
             setValidated(false);
@@ -238,7 +241,12 @@ export default function Investigadores() {
             {/* Mensaje de acción en curso */}
             {processing && (
                 <ToastMessage
-                    message="Procesando acción, por favor espera…"
+                    message={
+                        <div className="d-flex align-items-center">
+                            <div className="spinner-border spinner-border-sm me-2" role="status"></div>
+                            Procesando acción, por favor espera…
+                        </div>
+                    }
                     type="warning"
                     autohide={false}
                     onClose={() => setProcessing(false)}
@@ -248,21 +256,17 @@ export default function Investigadores() {
             {/* Mensaje de resultado */}
             {message && (
                 <ToastMessage
-                    message={
-                        <div className="d-flex align-items-center">
-                            <div className="spinner-border spinner-border-sm me-2" role="status"></div>
-                            Procesando acción, por favor espera…
-                        </div>}
+                    message={message.text}
                     type={message.type}
                     autohide={true}
                     delay={3000}
                     onClose={() => setMessage(null)}
                 />
             )}
-
+            
             {/* Modal Bootstrap con validaciones */}
             {showModal && (
-                <div className="modal show d-block" tabIndex="-1">
+                <div className="modal show d-block fade-in fast" tabIndex="-1">
                     <div className="modal-dialog modal-lg modal-dialog-centered">
                         <div className="modal-content shadow-lg border-0">
                             <form onSubmit={handleAdd} noValidate>
@@ -309,15 +313,29 @@ export default function Investigadores() {
                                         {/* Contraseña */}
                                         <div className="col-md-6">
                                             <label className="form-label fw-bold">Contraseña</label>
-                                            <input
-                                                type="password"
-                                                name="password"
-                                                value={formData.password}
-                                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                                className={`form-control ${validated && formData.password.length < 8 ? "is-invalid" : ""} ${shakeFields.includes("password") ? "shake" : ""}`}
-                                                required
-                                            />
-                                            <div className="invalid-feedback">La contraseña debe tener al menos 8 caracteres.</div>
+                                            <div className="input-group">
+                                                <input
+                                                    type={showPassword ? "text" : "password"}
+                                                    name="password"
+                                                    value={formData.password}
+                                                    onChange={(e) =>
+                                                        setFormData({ ...formData, password: e.target.value })
+                                                    }
+                                                    className={`form-control ${validated && formData.password.length < 8 ? "is-invalid" : ""
+                                                        } ${shakeFields.includes("password") ? "shake" : ""}`}
+                                                    required
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-outline-secondary"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                >
+                                                    <i className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`}></i>
+                                                </button>
+                                                <div className="invalid-feedback">
+                                                    La contraseña debe tener al menos 8 caracteres.
+                                                </div>
+                                            </div>
                                         </div>
 
                                         {/* Nombres */}
@@ -414,9 +432,10 @@ export default function Investigadores() {
                                             <label className="form-label fw-bold">Administrador a cargo</label>
                                             <select
                                                 name="administradorid"
-                                                value={formData.administradorid || ""}
-                                                onChange={(e) => setFormData({ ...formData, administradorid: parseInt(e.target.value) })}
-                                                className={`form-select ${validated && !formData.administradorid ? "is-invalid" : ""} ${shakeFields.includes("administradorid") ? "shake" : ""}`}
+                                                value={formData.administradorid}
+                                                onChange={(e) => setFormData({ ...formData, administradorid: e.target.value })}
+                                                className={`form-select ${validated && !formData.administradorid ? "is-invalid" : ""
+                                                    } ${shakeFields.includes("administradorid") ? "shake" : ""}`}
                                                 required
                                             >
                                                 <option value="">Seleccione administrador</option>
@@ -426,8 +445,10 @@ export default function Investigadores() {
                                                     </option>
                                                 ))}
                                             </select>
+
                                             <div className="invalid-feedback">Debe seleccionar un administrador.</div>
                                         </div>
+
                                     </div>
                                 </div>
                                 <div className="modal-footer">

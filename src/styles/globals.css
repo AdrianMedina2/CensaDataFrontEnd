@@ -12,6 +12,7 @@ body {
 
 main {
     flex: 1;
+    margin-top: 0 !important;
 }
 
 /* Evitar que se muestre el check verde en inputs válidos */

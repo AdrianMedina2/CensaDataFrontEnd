@@ -30,46 +30,6 @@ export default function SidebarMenu() {
         };
     }, []);
 
-    // Solo fijar la variable CSS con la altura inicial de la navbar
-    useEffect(() => {
-        const navbar = document.querySelector('.navbar');
-        if (!navbar) return;
-        const initialNavH = Math.round(navbar.getBoundingClientRect().height) || 70;
-        document.documentElement.style.setProperty('--navbar-initial-height', `${initialNavH}px`);
-    }, []);
-
-    useEffect(() => {
-        const navbar = document.querySelector('.navbar');
-        const sidebarLogo = document.querySelector('.sidebar .sidebar-logo');
-        if (!navbar || !sidebarLogo) return;
-
-        const updateLogoVisibility = () => {
-            const navRect = navbar.getBoundingClientRect();
-            if (navRect.bottom <= 0) {
-                sidebarLogo.style.opacity = '1';
-                sidebarLogo.style.pointerEvents = 'auto';
-                sidebarLogo.style.transform = 'translateY(0)';
-            } else {
-                sidebarLogo.style.opacity = '0';
-                sidebarLogo.style.pointerEvents = 'none';
-                sidebarLogo.style.transform = 'translateY(-6px)';
-            }
-        };
-
-        updateLogoVisibility();
-        window.addEventListener('scroll', updateLogoVisibility, { passive: true });
-        window.addEventListener('resize', updateLogoVisibility);
-
-        const obs = new MutationObserver(updateLogoVisibility);
-        obs.observe(navbar, { attributes: true, attributeFilter: ['class', 'style'] });
-
-        return () => {
-            window.removeEventListener('scroll', updateLogoVisibility);
-            window.removeEventListener('resize', updateLogoVisibility);
-            obs.disconnect();
-        };
-    }, []);
-
     const commonLinks = (
         <NavLink to="/home" className="nav-link fs-5 text-white" onClick={handleNavClick}>
             {({ isActive }) => (
@@ -121,19 +81,19 @@ export default function SidebarMenu() {
                         </>
                     )}
                 </NavLink>
-                <NavLink to="/ubicaciones" className="nav-link fs-5 text-white" onClick={handleNavClick}>
+                <NavLink to="/estudiantil" className="nav-link fs-5 text-white" onClick={handleNavClick}>
                     {({ isActive }) => (
                         <>
-                            <i className={`bi ${isActive ? "bi-geo-alt-fill" : "bi-geo-alt"} me-2`}></i>
-                            Ubicaciones
+                            <i className={`bi ${isActive ? "bi-mortarboard-fill" : "bi-mortarboard"} me-2`}></i>
+                            Estudiantil
                         </>
                     )}
                 </NavLink>
-                <NavLink to="/infraestructura" className="nav-link fs-5 text-white" onClick={handleNavClick}>
+                <NavLink to="/extracurricular" className="nav-link fs-5 text-white" onClick={handleNavClick}>
                     {({ isActive }) => (
                         <>
-                            <i className={`bi ${isActive ? "bi-building-fill" : "bi-building"} me-2`}></i>
-                            Infraestructura
+                            <i className={`bi ${isActive ? "bi-calendar-event-fill" : "bi-calendar-event"} me-2`}></i>
+                            Extracurricular
                         </>
                     )}
                 </NavLink>
@@ -153,7 +113,14 @@ export default function SidebarMenu() {
                         </>
                     )}
                 </NavLink>
-
+                <NavLink to="/chat" className="nav-link fs-5 text-white" onClick={handleNavClick}>
+                    {({ isActive }) => (
+                        <>
+                            <i className={`bi ${isActive ? "bi-chat-dots-fill" : "bi-chat-dots"} me-2`}></i>
+                            Chat
+                        </>
+                    )}
+                </NavLink>
             </div>
         </>
     );
@@ -162,11 +129,6 @@ export default function SidebarMenu() {
         <>
             {/* Sidebar fijo en escritorio */}
             <aside className="d-none d-md-block bg-brand sidebar" aria-label="Sidebar">
-                <div className="sidebar-logo-wrapper">
-                    <NavLink to="/home" className="logo-link">
-                        <img src="/CensaDataWhite.png" alt="Logo" className="sidebar-logo me-3" />
-                    </NavLink>
-                </div>
                 <nav className="nav flex-column sidebar-inner">
                     {commonLinks}
                     {role === "ADMINISTRADOR" && adminLinks}

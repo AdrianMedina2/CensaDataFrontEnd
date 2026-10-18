@@ -2,6 +2,7 @@ import React from "react";
 import Navbar from "../../components/Navbar/Navbar.jsx";
 import Sidebar from "../../components/Sidebar/Sidebar.jsx";
 import Footer from "../../components/Footer/Footer.jsx";
+import "./MainLayout.css";
 
 export default function MainLayout({ children }) {
     return (
@@ -11,12 +12,11 @@ export default function MainLayout({ children }) {
 
             {/* Cuerpo con sidebar + contenido */}
             <div className="d-flex flex-grow-1">
-                {/* placeholder: reserva espacio en md+ para la sidebar fija */}
-                <div className="d-none d-md-block" style={{ width: 220 }} aria-hidden="true" />
-
+                {/* Sidebar fija */}
                 <Sidebar />
 
-                <main className="flex-grow-1 p-3">
+                {/* Contenido principal */}
+                <main className="main-content">
                     {children}
                 </main>
             </div>
