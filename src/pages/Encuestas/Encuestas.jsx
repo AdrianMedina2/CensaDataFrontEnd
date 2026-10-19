@@ -5,7 +5,6 @@ import ConfirmModal from "../../components/ConfirmModal.jsx/ConfirmModal";
 import "./Encuestas.css";
 import {
     getCensos,
-    getBarrios,
     getMaterialesConstrucciones,
     getTiposDeTechos,
     getTiposDePisos,
@@ -120,7 +119,6 @@ export default function EncuestaForm() {
 
         Promise.all([
             getCensos(),
-            getBarrios(),
             getMaterialesConstrucciones(),
             getTiposDeTechos(),
             getTiposDePisos(),
