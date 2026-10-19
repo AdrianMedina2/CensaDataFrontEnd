@@ -33,31 +33,10 @@ function ChatPage() {
             (payload) => {
                 if (payload.type === "chat_message" && payload.mensaje) {
                     const incoming = payload.mensaje;
-                    const invId = Number(getId(incoming.investigador1));
-                    const invDest = Number(getId(incoming.investigador2));
-
-                    // conversación activa
-                    if (
-                        destinatarioId &&
-                        ((invId === userId && invDest === destinatarioId) ||
-                            (invDest === userId && invId === destinatarioId))
-                    ) {
-                        setMensajes(prev => {
-                            const existe = prev.some(m => m._id === incoming._id);
-                            return existe ? prev : [...prev, incoming];
-                        });
-                        // se limpia badge para este investigador
-                        setUnread(prev => {
-                            const copy = { ...prev };
-                            delete copy[invId];
-                            delete copy[invDest];
-                            return copy;
-                        });
-                    } else {
-                        // mensaje de otro investigador se marca como nuevo
-                        const otroId = invId === userId ? invDest : invId;
-                        setUnread(prev => ({ ...prev, [otroId]: true }));
-                    }
+                    setMensajes(prev => {
+                        const existe = prev.some(m => m._id === incoming._id);
+                        return existe ? prev : [...prev, incoming];
+                    });
                 }
                 console.log("payload recibido:", payload);
             },
