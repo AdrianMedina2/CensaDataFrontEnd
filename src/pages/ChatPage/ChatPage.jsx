@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { connect, sendMessage, close } from "../../services/chatSocket";
+import { connect, sendMessage, close, connectGlobal, closeGlobal } from "../../services/chatSocket";
 import { getMensajes, getInvestigadores } from "../../services";
 import { useAuth } from "../../context/AuthContext";
 
@@ -17,6 +17,7 @@ function ChatPage() {
 
     const getId = (inv) => inv?.id_inves ?? inv?.id_invest;
 
+    // Cargar lista de investigadores
     useEffect(() => {
         getInvestigadores().then(res => {
             const lista = Array.isArray(res.data) ? res.data : res;
@@ -24,9 +25,12 @@ function ChatPage() {
         });
     }, []);
 
+    // Conexión al socket: sala dinámica según usuario y destinatario
     useEffect(() => {
-        if (!userId) return;
-        const roomName = "sala_102_203";
+        if (!userId || !destinatarioId) return;
+
+        // Sala con convención id1_id2
+        const roomName = `sala_${Math.min(userId, destinatarioId)}_${Math.max(userId, destinatarioId)}`;
 
         connect(
             roomName,
@@ -44,11 +48,37 @@ function ChatPage() {
         );
 
         return () => {
-            console.log("ChatPage desmontado, cerrando socket");
+            console.log("Chat cerrado, cerrando socket de chat");
             close();
+        };
+    }, [userId, destinatarioId]);
+
+    // Conexión global a notificaciones
+    useEffect(() => {
+        if (!userId) return;
+
+        connectGlobal(
+            (payload) => {
+                if (payload.type === "notificacion") {
+                    const { remitenteId, destinatarioId } = payload;
+                    // Si el usuario es el destinatario y no está en ese chat, marca badge
+                    if (Number(payload.destinatarioId) === userId && Number(destinatarioId) !== Number(payload.remitenteId)) {
+                        setUnread(prev => ({ ...prev, [payload.remitenteId]: true }));
+                    }
+
+                }
+                console.log("Notificación global recibida:", payload);
+            },
+            (status) => console.log("Estado global:", status)
+        );
+
+        return () => {
+            console.log("ChatPage desmontado, cerrando socket global");
+            closeGlobal();
         };
     }, [userId]);
 
+    // Cargar historial vía API
     useEffect(() => {
         async function cargarHistorial() {
             if (destinatarioId) {
@@ -59,6 +89,7 @@ function ChatPage() {
         cargarHistorial();
     }, [destinatarioId, userId]);
 
+    // Scroll automático
     useEffect(() => {
         if (chatRef.current) {
             chatRef.current.scrollTop = chatRef.current.scrollHeight;
@@ -81,7 +112,7 @@ function ChatPage() {
     return (
         <div className="chat-page d-flex flex-column h-100">
             <div className="row flex-grow-1 h-100">
-                {/* Sidebar */}
+                {/* Sidebar solo en desktop */}
                 <div className="col-md-3 border-end bg-light p-3 h-100 d-none d-md-block">
                     <input
                         type="text"
@@ -113,7 +144,7 @@ function ChatPage() {
                     </div>
                 </div>
 
-                {/* Chat panel */}
+                {/* Panel de chat (en móvil ocupa todo) */}
                 <div className="col-12 col-md-9 d-flex flex-column p-3 h-100">
                     {destinatarioId ? (
                         <>
@@ -172,13 +203,49 @@ function ChatPage() {
                             </div>
                         </>
                     ) : (
-                        <div className="d-flex align-items-center justify-content-center flex-grow-1">
-                            <h4 className="text-muted">Selecciona un investigador</h4>
-                        </div>
+                        <>
+                            {/* En móvil: lista arriba */}
+                            <div className="d-md-none w-100">
+                                <input
+                                    type="text"
+                                    placeholder="Buscar investigador..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    className="form-control mb-3"
+                                />
+                                <div className="list-group">
+                                    {investigadores
+                                        .filter(inv =>
+                                            inv.id !== userId &&
+                                            `${inv.primernombre} ${inv.primerapellido}`.toLowerCase().includes(search.toLowerCase())
+                                        )
+                                        .map(inv => (
+                                            <button
+                                                key={inv.id}
+                                                className="list-group-item list-group-item-action"
+                                                onClick={() => {
+                                                    setDestinatarioId(inv.id);
+                                                    setMensajes([]);
+                                                    setUnread(prev => ({ ...prev, [inv.id]: false }));
+                                                }}
+                                            >
+                                                <strong>{inv.primernombre} {inv.primerapellido}</strong>
+                                                {unread[inv.id] && <span className="badge bg-danger ms-2">Nuevo</span>}
+                                            </button>
+                                        ))}
+                                </div>
+                            </div>
+
+                            {/* En desktop: texto centrado */}
+                            <div className="d-none d-md-flex flex-grow-1 align-items-center justify-content-center">
+                                <h4 className="text-muted">Selecciona un investigador</h4>
+                            </div>
+                        </>
                     )}
                 </div>
             </div>
         </div>
+
     );
 }
 
