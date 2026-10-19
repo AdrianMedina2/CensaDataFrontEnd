@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { connect, sendMessage, close } from "../../services/chatSocket";
+import { getMensajes, getInvestigadores } from "../../services";
 import { useAuth } from "../../context/AuthContext";
-import { getInvestigadores, connect, sendMessage, close } from "../../services";
 
 function ChatPage() {
     const { auth } = useAuth();
@@ -12,8 +13,9 @@ function ChatPage() {
     const [mensajes, setMensajes] = useState([]);
     const [texto, setTexto] = useState("");
     const [unread, setUnread] = useState({});
-
     const chatRef = useRef(null);
+
+    const getId = (inv) => inv?.id_inves ?? inv?.id_invest;
 
     useEffect(() => {
         getInvestigadores().then(res => {
@@ -24,40 +26,59 @@ function ChatPage() {
 
     useEffect(() => {
         if (!userId) return;
-
-        const currentDest = destinatarioId !== null ? Number(destinatarioId) : null;
+        const roomName = "sala_102_203";
 
         connect(
-            userId,
-            currentDest,
+            roomName,
             (payload) => {
-                if (payload.type === "historial") {
-                    setMensajes(Array.isArray(payload.mensajes) ? payload.mensajes : []);
-                } else if (payload.type === "chat_message") {
-                    const invId = Number(payload.mensaje.investigador1.id_inves);
-                    const invDest = Number(payload.mensaje.investigador2.id_inves);
+                if (payload.type === "chat_message" && payload.mensaje) {
+                    const incoming = payload.mensaje;
+                    const invId = Number(getId(incoming.investigador1));
+                    const invDest = Number(getId(incoming.investigador2));
 
+                    // conversación activa
                     if (
-                        currentDest &&
-                        (
-                            (invId === userId && invDest === currentDest) ||
-                            (invDest === userId && invId === currentDest)
-                        )
+                        destinatarioId &&
+                        ((invId === userId && invDest === destinatarioId) ||
+                            (invDest === userId && invId === destinatarioId))
                     ) {
-                        setMensajes(prev => [...prev, payload.mensaje]);
+                        setMensajes(prev => {
+                            const existe = prev.some(m => m._id === incoming._id);
+                            return existe ? prev : [...prev, incoming];
+                        });
+                        // se limpia badge para este investigador
+                        setUnread(prev => {
+                            const copy = { ...prev };
+                            delete copy[invId];
+                            delete copy[invDest];
+                            return copy;
+                        });
+                    } else {
+                        // mensaje de otro investigador se marca como nuevo
+                        const otroId = invId === userId ? invDest : invId;
+                        setUnread(prev => ({ ...prev, [otroId]: true }));
                     }
-
-                    if (invId !== userId && invId !== destinatarioId) {
-                        setUnread(prev => ({ ...prev, [invId]: true }));
-                    }
-
                 }
+                console.log("payload recibido:", payload);
             },
             (status) => console.log("Estado:", status)
         );
 
-        return () => close();
-    }, [userId, destinatarioId]);
+        return () => {
+            console.log("ChatPage desmontado, cerrando socket");
+            close();
+        };
+    }, [userId]);
+
+    useEffect(() => {
+        async function cargarHistorial() {
+            if (destinatarioId) {
+                const data = await getMensajes(userId, destinatarioId);
+                setMensajes(Array.isArray(data.mensajes) ? data.mensajes : []);
+            }
+        }
+        cargarHistorial();
+    }, [destinatarioId, userId]);
 
     useEffect(() => {
         if (chatRef.current) {
@@ -69,7 +90,6 @@ function ChatPage() {
         if (texto.trim() && destinatarioId) {
             const inv1 = investigadores.find(i => Number(i.id) === Number(userId));
             const inv2 = investigadores.find(i => Number(i.id) === Number(destinatarioId));
-
             if (inv1 && inv2) {
                 sendMessage(texto, inv1, inv2);
                 setTexto("");
@@ -82,6 +102,7 @@ function ChatPage() {
     return (
         <div className="chat-page d-flex flex-column h-100">
             <div className="row flex-grow-1 h-100">
+                {/* Sidebar */}
                 <div className="col-md-3 border-end bg-light p-3 h-100 d-none d-md-block">
                     <input
                         type="text"
@@ -113,6 +134,7 @@ function ChatPage() {
                     </div>
                 </div>
 
+                {/* Chat panel */}
                 <div className="col-12 col-md-9 d-flex flex-column p-3 h-100">
                     {destinatarioId ? (
                         <>
@@ -134,20 +156,25 @@ function ChatPage() {
                                 style={{ minHeight: 0 }}
                             >
                                 <ul className="list-unstyled">
-                                    {mensajes.map((m, i) => (
-                                        <li
-                                            key={i}
-                                            className={`p-2 mb-2 rounded ${
-                                                Number(m.investigador1?.id_inves) === userId
-                                                    ? "bg-primary text-white ms-auto text-end"
-                                                    : "bg-light text-dark me-auto"
-                                            }`}
-                                            style={{ maxWidth: "70%" }}
-                                        >
-                                            <div>{m.mensaje}</div>
-                                            <small className="text-muted d-block">{m.fechaLocal}</small>
-                                        </li>
-                                    ))}
+                                    {mensajes.map((m, i) => {
+                                        const fechaObj = new Date(m.fecha);
+                                        const hora = isNaN(fechaObj.getTime())
+                                            ? "hora desconocida"
+                                            : fechaObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
+
+                                        const esRemitente = Number(getId(m.investigador1)) === userId;
+
+                                        return (
+                                            <li
+                                                key={m._id ?? i}
+                                                className={`p-2 mb-2 rounded ${esRemitente ? "bg-primary text-white ms-auto text-end" : "bg-light text-dark me-auto"}`}
+                                                style={{ maxWidth: "70%" }}
+                                            >
+                                                <div>{m.mensaje}</div>
+                                                <small className="text-muted d-block">{hora}</small>
+                                            </li>
+                                        );
+                                    })}
                                 </ul>
                             </div>
 
@@ -166,43 +193,9 @@ function ChatPage() {
                             </div>
                         </>
                     ) : (
-                        <>
-                            <div className="d-md-none d-flex flex-column align-items-center">
-                                <input
-                                    type="text"
-                                    placeholder="Buscar investigador..."
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    className="form-control mb-3 text-center"
-                                    style={{ maxWidth: "100%" }}
-                                />
-                                <div className="list-group w-100">
-                                    {investigadores
-                                        .filter(inv =>
-                                            inv.id !== userId &&
-                                            `${inv.primernombre} ${inv.primerapellido}`.toLowerCase().includes(search.toLowerCase())
-                                        )
-                                        .map(inv => (
-                                            <button
-                                                key={inv.id}
-                                                className="list-group-item list-group-item-action text-center fs-5"
-                                                onClick={() => {
-                                                    setDestinatarioId(inv.id);
-                                                    setMensajes([]);
-                                                    setUnread(prev => ({ ...prev, [inv.id]: false }));
-                                                }}
-                                            >
-                                                <strong>{inv.primernombre} {inv.primerapellido}</strong>
-                                                {unread[inv.id] && <span className="badge bg-danger ms-2">Nuevo</span>}
-                                            </button>
-                                        ))}
-                                </div>
-                            </div>
-
-                            <div className="d-flex align-items-center justify-content-center flex-grow-1 d-none d-md-flex">
-                                <h4 className="text-muted">Selecciona un investigador</h4>
-                            </div>
-                        </>
+                        <div className="d-flex align-items-center justify-content-center flex-grow-1">
+                            <h4 className="text-muted">Selecciona un investigador</h4>
+                        </div>
                     )}
                 </div>
             </div>
