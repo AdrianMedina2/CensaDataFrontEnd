@@ -8,19 +8,30 @@ export default function PersonaEmpadronadoForm({
     empadronado,
     onChangePersona,
     onChangeEmpadronado,
-    relaciones,
-    estadosCiviles,
-    nivelesEducativos,
-    empleos,
     submitted,
+    discapacidades,
+    carreras,
 }) {
-    const nivelesUnicos = [...new Set(nivelesEducativos.map(n => n.niveleducativo))];
     return (
         <div className="card mb-4 shadow-sm">
             <div className="card-body">
-                <h5 className="card-title">Persona {index + 1}</h5>
+                <h5 className="card-title">Estudiante {index + 1}</h5>
                 {/* Datos de Persona */}
                 <div className="row g-3">
+                    <div className="col-md-12">
+                        <label className="form-label">Número de Cédula</label>
+                        <ValidatedInput
+                            value={empadronado.numerocedula || ""}
+                            onChange={(val) =>
+                                onChangeEmpadronado(index, { ...empadronado, numerocedula: val })
+                            }
+                            error={
+                                submitted && (!empadronado.numerocedula || !/^[A-Za-z0-9]{14}$/.test(empadronado.numerocedula))
+                                    ? "Ingrese una cédula válida de 14 caracteres."
+                                    : ""
+                            }
+                        />
+                    </div>
                     <div className="col-md-6">
                         <label className="form-label">Primer Nombre</label>
                         <ValidatedInput
@@ -42,11 +53,7 @@ export default function PersonaEmpadronadoForm({
                             onChange={(val) =>
                                 onChangePersona(index, { ...persona, segundonombre: val })
                             }
-                            error={
-                                submitted && (!persona.segundonombre && persona.segundonombre.length < 3)
-                                    ? "Debe tener al menos 3 caracteres."
-                                    : ""
-                            }
+                            error=""
                         />
                     </div>
                     <div className="col-md-6">
@@ -70,9 +77,93 @@ export default function PersonaEmpadronadoForm({
                             onChange={(val) =>
                                 onChangePersona(index, { ...persona, segundoapellido: val })
                             }
+                            error=""
+                        />
+                    </div>
+                    <div className="col-md-6">
+                        <label className="form-label">Contacto</label>
+                        <ValidatedInput
+                            type="text"
+                            value={empadronado.contacto || ""}
+                            onChange={(val) =>
+                                onChangeEmpadronado(index, { ...empadronado, contacto: val })
+                            }
                             error={
-                                submitted && (!persona.segundoapellido && persona.segundoapellido.length < 3)
-                                    ? "Debe tener al menos 3 caracteres."
+                                submitted && (!empadronado.contacto || !/^\d{8}$/.test(empadronado.contacto))
+                                    ? "Debe ingresar un contacto de 8 dígitos."
+                                    : ""
+                            }
+                        />
+                    </div>
+                    <div className="col-md-6">
+                        <label className="form-label">Semestre</label>
+                        <ValidatedInput
+                            type="number"
+                            value={empadronado.semestre || ""}
+                            onChange={(val) =>
+                                onChangeEmpadronado(index, { ...empadronado, semestre: val })
+                            }
+                            error={
+                                submitted && (!empadronado.semestre || empadronado.semestre < 1 || empadronado.semestre > 12)
+                                    ? "Debe ingresar un semestre válido (1-12)."
+                                    : ""
+                            }
+                        />
+                    </div>
+
+                    <div className="col-md-6">
+                        <label className="form-label">Tipo de Beca</label>
+                        <ValidatedInput
+                            type="select"
+                            value={empadronado.tipobeca || ""}
+                            onChange={(val) =>
+                                onChangeEmpadronado(index, { ...empadronado, tipobeca: val })
+                            }
+                            options={[
+                                { value: "", label: "Seleccione..." },
+                                { value: "Completa", label: "Completa" },
+                                { value: "Alojamiento", label: "Alojamiento" }
+                            ]}
+                            error={submitted && !empadronado.tipobeca ? "Debe seleccionar tipo de beca." : ""}
+                        />
+                    </div>
+                    <div className="col-md-6">
+                        <label className="form-label">Carrera</label>
+                        <Select
+                            classNamePrefix="react-select"
+                            value={
+                                empadronado.carreraid !== undefined && empadronado.carreraid !== ""
+                                    ? {
+                                        value: empadronado.carreraid,
+                                        label: carreras.find(c => c.id === empadronado.carreraid)?.carrera
+                                    }
+                                    : null
+                            }
+                            onChange={(selected) =>
+                                onChangeEmpadronado(index, { ...empadronado, carreraid: selected ? selected.value : "" })
+                            }
+                            options={carreras.map(c => ({
+                                value: c.id,
+                                label: c.carrera
+                            }))}
+                            placeholder="Seleccione..."
+                            isClearable
+                        />
+                        {submitted && (empadronado.carreraid === "" || empadronado.carreraid === undefined) && (
+                            <div className="invalid-feedback d-block">Debe seleccionar carrera.</div>
+                        )}
+                    </div>
+                    <div className="col-md-6">
+                        <label className="form-label">Carnet</label>
+                        <ValidatedInput
+                            type="text"
+                            value={empadronado.carnet || ""}
+                            onChange={(val) =>
+                                onChangeEmpadronado(index, { ...empadronado, carnet: val })
+                            }
+                            error={
+                                submitted && (!empadronado.carnet || !/^\d{8}$/.test(empadronado.carnet))
+                                    ? "Debe ingresar un carnet de 8 dígitos."
                                     : ""
                             }
                         />
@@ -110,145 +201,22 @@ export default function PersonaEmpadronadoForm({
                         )}
                     </div>
                     <div className="col-md-6">
-                        <label className="form-label">Relación de parentesco</label>
-                        <Select
-                            options={relaciones.map(r => ({ value: r.id, label: r.relacion }))}
-                            value={relaciones.find(r => r.id === parseInt(empadronado.relacionid))
-                                ? { value: empadronado.relacionid, label: relaciones.find(r => r.id === parseInt(empadronado.relacionid)).relacion }
-                                : null}
-                            onChange={(selected) =>
-                                onChangeEmpadronado(index, { ...empadronado, relacionid: selected ? selected.value : "" })
+                        <label className="form-label">Discapacidad</label>
+                        <select
+                            className="form-select"
+                            value={persona.discapacidadid ?? 0}
+                            onChange={(e) =>
+                                onChangePersona(index, { ...persona, discapacidadid: Number(e.target.value) })
                             }
-                            placeholder="Seleccione..."
-                            isClearable
-                            className={submitted && !empadronado.relacionid ? "is-invalid" : ""}
-                        />
-                        {submitted && !empadronado.relacionid && (
-                            <div className="invalid-feedback d-block">Debe seleccionar relación.</div>
-                        )}
-                    </div>
-                    <div className="col-md-6">
-                        <label className="form-label">Número de Cédula</label>
-                        <ValidatedInput
-                            value={empadronado.numerocedula || ""}
-                            onChange={(val) =>
-                                onChangeEmpadronado(index, { ...empadronado, numerocedula: val })
-                            }
-                            error={
-                                submitted && empadronado.numerocedula && empadronado.numerocedula.length < 10
-                                    ? "Debe tener al menos 10 caracteres."
-                                    : ""
-                            }
-                        />
-                    </div>
-                    <div className="col-md-6">
-                        <label className="form-label">Estado Civil</label>
-                        <Select
-                            options={estadosCiviles.map(e => ({ value: e.id, label: e.estadocivil }))}
-                            value={estadosCiviles.find(e => e.id === parseInt(empadronado.estadocivilid))
-                                ? { value: empadronado.estadocivilid, label: estadosCiviles.find(e => e.id === parseInt(empadronado.estadocivilid)).estadocivil }
-                                : null}
-                            onChange={(selected) =>
-                                onChangeEmpadronado(index, { ...empadronado, estadocivilid: selected ? selected.value : "" })
-                            }
-                            placeholder="Seleccione..."
-                            isClearable
-                            className={submitted && !empadronado.estadocivilid ? "is-invalid" : ""}
-                        />
-                        {submitted && !empadronado.estadocivilid && (
-                            <div className="invalid-feedback d-block">Debe seleccionar estado civil.</div>
-                        )}
-                    </div>
-                    <div className="col-md-6">
-                        <label className="form-label">Empleo</label>
-                        <Select
-                            options={empleos.map(em => ({ value: em.id, label: em.empleo }))}
-                            value={empleos.find(em => em.id === parseInt(empadronado.empleoid))
-                                ? { value: empadronado.empleoid, label: empleos.find(em => em.id === parseInt(empadronado.empleoid)).empleo }
-                                : null}
-                            onChange={(selected) =>
-                                onChangeEmpadronado(index, { ...empadronado, empleoid: selected ? selected.value : "" })
-                            }
-                            placeholder="Seleccione..."
-                            isClearable
-                            className={submitted && !empadronado.empleoid ? "is-invalid" : ""}
-                        />
-                        {submitted && !empadronado.empleoid && (
-                            <div className="invalid-feedback d-block">Debe seleccionar empleo.</div>
-                        )}
-                    </div>
-                    <div className="col-md-6">
-                        <div className="row">
-                            <div className="col-6">
-                                <label className="form-label">Nivel Educativo</label>
-                                <Select
-                                    options={nivelesUnicos.map(n => ({ value: n, label: n }))}
-                                    value={empadronado.nivelSeleccionado
-                                        ? { value: empadronado.nivelSeleccionado, label: empadronado.nivelSeleccionado }
-                                        : null}
-                                    onChange={(selected) => {
-                                        const nivel = selected ? selected.value : "";
-                                        onChangeEmpadronado(index, {
-                                            ...empadronado,
-                                            nivelSeleccionado: nivel,
-                                            grado: "",
-                                            niveleducativoid: "" // se limpia hasta que elija grado
-                                        });
-                                    }}
-                                    placeholder="Seleccione nivel..."
-                                    className={submitted && !empadronado.nivelSeleccionado ? "is-invalid" : ""}
-                                />
-                                {submitted && !empadronado.nivelSeleccionado && (
-                                    <div className="invalid-feedback d-block">Debe seleccionar nivel educativo.</div>
-                                )}
-                            </div>
-
-                            <div className="col-6">
-                                <label className="form-label">Grado</label>
-                                <Select
-                                    options={nivelesEducativos
-                                        .filter(n => n.niveleducativo === empadronado.nivelSeleccionado)
-                                        .map(n => ({ value: n.id, label: `Grado ${n.grado}` }))}
-                                    value={empadronado.niveleducativoid
-                                        ? { value: empadronado.niveleducativoid, label: `Grado ${empadronado.grado}` }
-                                        : null}
-                                    onChange={(selected) => {
-                                        const registro = nivelesEducativos.find(n => n.id === selected.value);
-                                        onChangeEmpadronado(index, {
-                                            ...empadronado,
-                                            grado: registro?.grado || "",
-                                            niveleducativoid: selected ? selected.value : ""
-                                        });
-                                    }}
-                                    placeholder="Seleccione grado..."
-                                    isDisabled={empadronado.nivelSeleccionado === "Ninguno"}
-                                    className={submitted && empadronado.nivelSeleccionado !== "Ninguno" && !empadronado.niveleducativoid ? "is-invalid" : ""}
-                                />
-                                {submitted && empadronado.nivelSeleccionado !== "Ninguno" && !empadronado.niveleducativoid && (
-                                    <div className="invalid-feedback d-block">Debe seleccionar grado.</div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="col-md-6">
-                        <label className="form-label">Ingreso Personal</label>
-                        <ValidatedInput
-                            type="number"
-                            value={empadronado.ingresopersonal || ""}
-                            onChange={(val) =>
-                                onChangeEmpadronado(index, { ...empadronado, ingresopersonal: val })
-                            }
-                            error={
-                                submitted && (
-                                    empadronado.ingresopersonal === "" || empadronado.ingresopersonal === undefined
-                                        ? "Debe ingresar un valor."
-                                        : Number(empadronado.ingresopersonal) < 0
-                                            ? "El ingreso no puede ser negativo."
-                                            : ""
-                                )
-                            }
-                        />
+                        >
+                            <option value={0}>Ninguna</option>
+                            {Array.isArray(discapacidades) &&
+                                discapacidades.map((d) => (
+                                    <option key={d.id} value={d.id}>
+                                        {d.discapacidad}
+                                    </option>
+                                ))}
+                        </select>
                     </div>
                 </div>
             </div>
