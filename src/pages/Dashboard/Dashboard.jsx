@@ -12,8 +12,9 @@ import {
     ArcElement,
     PointElement,
 } from "chart.js";
-import { getEstadistica, getReportes, getReportePDF, updateReporteIsPublic } from "../../services/";
-import "./dashboard.css"
+import { getDashboard } from "../../services/";
+import "./dashboard.css";
+
 ChartJS.register(
     Title,
     Tooltip,
@@ -26,95 +27,37 @@ ChartJS.register(
     PointElement
 );
 
-const tipos = [
-    "estadisticas por ingreso",
-    "estadisticas por nivel educativo",
-    "estadisticas por empleo",
-    "estadisticas por estado civil",
-    "estadisticas por edades",
-    "estadisticas por Ingresos basados en el nivel educativo",
-    "estadisticas desempleados general",
-    "estadisticas desempleadas mujeres por edad",
-    "estadisticas empleadas mujeres por edad",
-    "estadisticas desempleados hombres por edad",
-    "estadisticas empleados hombres por edad",
-    "estadisticas ingresos de personas por barrios",
-];
-
 export default function Dashboard() {
     const [graficos, setGraficos] = useState({});
+    const [kpis, setKpis] = useState({});
     const [chartType, setChartType] = useState("bar");
-    const [reportes, setReportes] = useState([]);
-    const [selectedReporte, setSelectedReporte] = useState("");
     const [loading, setLoading] = useState(false);
-    const [confirmation, setConfirmation] = useState("");
+    const [desde, setDesde] = useState("2024-01-01");
+    const [hasta, setHasta] = useState("2024-06-01");
+
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const res = await getDashboard(desde, hasta);
+            setGraficos(res.graficos);
+            setKpis(res.kpis);
+        } catch (error) {
+            console.error("Error cargando dashboard:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        // cargar estadísticas una por una
-        const fetchData = async () => {
-            for (const tipo of tipos) {
-                try {
-                    const res = await getEstadistica(tipo);
-                    setGraficos(prev => ({
-                        ...prev,
-                        [tipo]: res.data
-                    }));
-                } catch (error) {
-                    console.error("Error cargando", tipo, error);
-                }
-            }
-        };
         fetchData();
-
-        // cargar reportes
-        const fetchReportes = async () => {
-            try {
-                const res = await getReportes();
-                setReportes(res.data);
-            } catch (error) {
-                console.error("Error cargando reportes:", error);
-            }
-        };
-        fetchReportes();
     }, []);
 
+    const formatTitulo = (nombre) =>
+        nombre.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
-    const handleUpdateIsPublic = async () => {
-        if (selectedReporte) {
-            try {
-                setLoading(true);
-                const result = await updateReporteIsPublic(selectedReporte);
-                setConfirmation(`✅ Reporte "${selectedReporte}" actualizado como público.`);
-                setTimeout(() => setConfirmation(""), 3000);
-            } catch (error) {
-                setConfirmation("❌ Error al actualizar el reporte.");
-                setTimeout(() => setConfirmation(""), 3000);
-            } finally {
-                setLoading(false);
-            }
-        }
-    };
-
-    const handleDownload = async () => {
-        if (selectedReporte) {
-            try {
-                setLoading(true);
-                await getReportePDF(selectedReporte);
-                setConfirmation(`✅ Reporte "${selectedReporte}" descargado correctamente.`);
-                setTimeout(() => setConfirmation(""), 3000);
-            } catch (error) {
-                setConfirmation("❌ Error al descargar el reporte.");
-                setTimeout(() => setConfirmation(""), 3000);
-            } finally {
-                setLoading(false);
-            }
-        }
-    };
-
-    const renderGrafico = (grafico) => {
+    const renderGrafico = (titulo, grafico, nombre) => {
         if (!grafico) return null;
 
-        // Paleta de colores variada
         const colors = [
             "rgba(0, 51, 204, 0.6)",
             "rgba(255, 99, 132, 0.6)",
@@ -128,83 +71,107 @@ export default function Dashboard() {
             "rgba(255, 0, 255, 0.6)",
         ];
 
-        const chartData = {
-            labels: grafico.labels,
-            datasets: grafico.series.map((s, idx) => ({
-                label: s.nombre,
-                data: s.values,
-                backgroundColor:
-                    chartType === "pie"
-                        ? colors
-                        : grafico.labels.map((_, i) => colors[i % colors.length]),
-                borderColor:
-                    chartType === "pie"
-                        ? colors.map((c) => c.replace("0.6", "1"))
-                        : grafico.labels.map((_, i) => colors[i % colors.length].replace("0.6", "1")),
+        const labels =
+            nombre === "evolucion_mensual_encuestados"
+                ? grafico.map((g) => `${g.mes}/${g.anio}`)
+                : grafico.map((g) => g.categoria);
 
-                borderWidth: 1,
-                yAxisID:
-                    grafico.series.length > 1
-                        ? idx === 0
-                            ? "y"
-                            : "y1"
-                        : "y",
-            })),
-        };
+        const dataValues = grafico.map((g) => g.valor);
+
+        let chartData;
+        if (chartType === "pie") {
+            chartData = {
+                labels,
+                datasets: [
+                    {
+                        data: dataValues,
+                        backgroundColor: labels.map((_, i) => colors[i % colors.length]),
+                        borderColor: labels.map((_, i) =>
+                            colors[i % colors.length].replace("0.6", "1")
+                        ),
+                        borderWidth: 1,
+                    },
+                ],
+            };
+        } else if (chartType === "line") {
+            chartData = {
+                labels,
+                datasets: [
+                    {
+                        label: "Cantidad",
+                        data: dataValues,
+                        borderColor: "rgba(150, 150, 150, 0.8)",
+                        backgroundColor: "transparent",
+                        borderWidth: 2,
+                        tension: 0,
+                        pointBackgroundColor: labels.map((_, i) => colors[i % colors.length]),
+                        pointBorderColor: labels.map((_, i) => colors[i % colors.length].replace("0.6", "1")),
+                        pointRadius: 5,
+                    },
+                ],
+            };
+        }
+
+        else {
+            chartData = {
+                labels,
+                datasets: [
+                    {
+                        label: "Cantidad",
+                        data: dataValues,
+                        backgroundColor: labels.map((_, i) => colors[i % colors.length]),
+                        borderColor: labels.map((_, i) =>
+                            colors[i % colors.length].replace("0.6", "1")
+                        ),
+                        borderWidth: 1,
+                    },
+                ],
+            };
+        }
+
 
         const options = {
             responsive: true,
             plugins: {
-                title: {
-                    display: true,
-                    text: grafico.titulo,
-                },
                 legend: {
-                    position: "top",
+                    display: true,
+                    position: "bottom",
+                    labels: {
+                        generateLabels: (chart) => {
+                            const data = chart.data;
+                            if (data.labels.length && data.datasets.length) {
+                                const dataset = data.datasets[0];
+                                return data.labels.map((label, i) => ({
+                                    text: label,
+                                    fillStyle: dataset.pointBackgroundColor
+                                        ? dataset.pointBackgroundColor[i]
+                                        : dataset.backgroundColor[i],
+                                    strokeStyle: dataset.pointBorderColor
+                                        ? dataset.pointBorderColor[i]
+                                        : dataset.borderColor[i],
+                                    index: i,
+                                }));
+                            }
+                            return Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                        },
+                    },
+
                 },
             },
-            scales:
-                chartType === "pie"
-                    ? {}
-                    : grafico.series.length > 1
-                        ? {
-                            y: {
-                                type: "linear",
-                                position: "left",
-                                title: {
-                                    display: true,
-                                    text:
-                                        grafico.series[0]?.nombre ||
-                                        "Eje Izquierdo",
-                                },
-                            },
-                            y1: {
-                                type: "linear",
-                                position: "right",
-                                grid: {
-                                    drawOnChartArea: false,
-                                },
-                                title: {
-                                    display: true,
-                                    text:
-                                        grafico.series[1]?.nombre ||
-                                        "Eje Derecho",
-                                },
-                            },
-                        }
-                        : {
-                            y: {
-                                type: "linear",
-                                position: "left",
-                                title: {
-                                    display: true,
-                                    text:
-                                        grafico.series[0]?.nombre ||
-                                        "Cantidad",
-                                },
-                            },
-                        },
+            scales: {
+                x: {
+                    ticks: { display: false },
+                },
+            },
+            datasets: {
+                bar: {
+                    barThickness: 30,
+                    categoryPercentage: 1.0,
+                    barPercentage: 1.0,
+                },
+            },
         };
+
 
         switch (chartType) {
             case "bar":
@@ -218,99 +185,109 @@ export default function Dashboard() {
         }
     };
 
-           return (
-    <div className="container-fluid">
-        <h2 className="fw-bold mt-2 mb-4">📊 Dashboard de Estadísticas</h2>
 
-        {/* Overlay de carga */}
-        {loading && (
-            <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-dark bg-opacity-50" style={{ zIndex: 1050 }}>
-                <div className="spinner-border text-light me-2" role="status"></div>
-                <span className="text-white fw-bold fs-4">Cargando...</span>
-            </div>
-        )}
+    return (
+        <div className="container-fluid">
+            <h2 className="fw-bold mt-2 mb-4">📊 Dashboard de Estadísticas</h2>
 
-        {/* Mensaje de confirmación centrado */}
-        {confirmation && (
-            <div className="overlay-success">
-                <div className="alert alert-success text-center">
-                    {confirmation}
+            {/* Filtro global de fechas + tipo de gráfico */}
+            <div className="mb-4 d-flex flex-wrap align-items-center">
+                <div className="input-group me-3" style={{ maxWidth: "500px" }}>
+                    <input
+                        type="date"
+                        value={desde}
+                        onChange={(e) => setDesde(e.target.value)}
+                        className="form-control"
+                    />
+                    <input
+                        type="date"
+                        value={hasta}
+                        onChange={(e) => setHasta(e.target.value)}
+                        className="form-control"
+                    />
+                    <button onClick={fetchData} className="btn btn-brand">
+                        Filtrar
+                    </button>
                 </div>
+
+                <label className="me-2 fw-bold">Tipo de gráfico:</label>
+                <select
+                    value={chartType}
+                    onChange={(e) => setChartType(e.target.value)}
+                    className="form-select w-auto d-inline-block"
+                >
+                    <option value="bar">📊 Barras</option>
+                    <option value="line">📈 Líneas</option>
+                    <option value="pie">🥧 Pastel</option>
+                </select>
             </div>
-        )}
 
-        {/* Selector de reporte y botones */}
-        <div className="mb-4 d-flex flex-column flex-md-row align-items-start align-items-md-center">
-            <label className="me-2 fw-bold">Tipo de reporte:</label>
-            <select
-                value={selectedReporte}
-                onChange={(e) => setSelectedReporte(e.target.value)}
-                className="form-select w-100 w-md-auto d-inline-block me-md-2 mb-2 mb-md-0"
-            >
-                <option value="">Seleccione un reporte</option>
-                {reportes.map((r) => (
-                    <option key={r.id} value={r.tiporeporte}>
-                        {r.tiporeporte}
-                    </option>
-                ))}
-            </select>
-            <button
-                onClick={handleDownload}
-                className="btn btn-brand mb-2 mb-md-0"
-                disabled={!selectedReporte}
-            >
-                Descargar PDF
-            </button>
-            {/* Botón de marcar como público */}
-            <button
-                onClick={handleUpdateIsPublic}
-                className="btn btn-brand ms-md-2"
-                disabled={
-                    !selectedReporte ||
-                    reportes.find((r) => r.tiporeporte === selectedReporte)?.espublico
-                }
-            >
-                {reportes.find((r) => r.tiporeporte === selectedReporte)?.espublico
-                    ? "Reporte ya público"
-                    : "Marcar como Público"}
-            </button>
-        </div>
+            {/* Overlay de carga */}
+            {loading && (
+                <div className="overlay-loading">
+                    <div className="spinner-border text-light me-2" role="status"></div>
+                    <span className="text-white fw-bold fs-4">Cargando datos...</span>
+                </div>
+            )}
 
-        {/* Selector de tipo de gráfico */}
-        <div className="mb-4 d-flex flex-column flex-md-row align-items-start align-items-md-center">
-            <label className="me-2 fw-bold">Tipo de gráfico:</label>
-            <select
-                value={chartType}
-                onChange={(e) => setChartType(e.target.value)}
-                className="form-select w-100 w-md-auto d-inline-block"
-            >
-                <option value="bar">Barras</option>
-                <option value="line">Líneas</option>
-                <option value="pie">Pastel</option>
-            </select>
-        </div>
-
-        {/* Gráficos */}
-        <div className="row">
-            {tipos.map((tipo, idx) => (
-                <div key={idx} className="col-12 col-md-6 mb-4">
-                    <div className="card shadow-sm h-100">
+            {/* KPIs */}
+            <div className="d-flex flex-wrap gap-3 mb-4">
+                {Object.values(kpis).map((kpi, idx) => (
+                    <div
+                        key={idx}
+                        className="card text-center shadow-sm border-0 bg-light"
+                        style={{ flex: "1 1 180px", minWidth: "180px" }}
+                    >
                         <div className="card-body">
-                            {renderGrafico(graficos[tipo]) || (
-                                <div className="text-center my-3">
-                                    <p className="fw-bold mb-2">Cargando gráfico {tipo}...</p>
-                                    <div className="d-flex justify-content-center">
-                                        <div className="spinner-border text-brand" role="status">
-                                            <span className="visually-hidden">Cargando {tipo}...</span>
-                                        </div>
-                                    </div>
-                                </div>
+                            <h6 className="text-muted">{kpi.titulo}</h6>
+                            <h3 className="fw-bold">
+                                {kpi.titulo === "Edad promedio"
+                                    ? Math.round(kpi.valor_actual)
+                                    : kpi.valor_actual}
+                            </h3>
+                            <p className="mb-1">
+                                <small className="text-muted">
+                                    Anterior: {kpi.titulo === "Edad promedio"
+                                        ? Math.round(kpi.valor_anterior)
+                                        : kpi.valor_anterior}
+                                </small>
+                            </p>
+                            {kpi.titulo !== "Edad promedio" && (
+                                <>
+                                    <p className="mb-1">
+                                        <small className="text-muted">Diferencia: {kpi.diferencia}</small>
+                                    </p>
+                                    <small
+                                        className={
+                                            kpi.tendencia === "aumento"
+                                                ? "text-success"
+                                                : "text-danger"
+                                        }
+                                    >
+                                        {kpi.tendencia} ({kpi.variacion_porcentual}%)
+                                    </small>
+                                </>
                             )}
                         </div>
                     </div>
-                </div>
-            ))}
+                ))}
+            </div>
+
+            {/* Gráficos */}
+            <div className="row">
+                {Object.entries(graficos).map(([nombre, grafico], idx) => (
+                    <div key={idx} className="col-12 col-md-6 mb-4">
+                        <div className="card shadow-sm h-100">
+                            <div className="card-header bg-brand text-white fw-bold">
+                                {formatTitulo(nombre)}
+                            </div>
+                            <div className="card-body">
+                                {renderGrafico(nombre, grafico, nombre)}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
-    </div>
-);
+    );
 }
