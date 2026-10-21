@@ -3,7 +3,6 @@ export * from "./censosApi";
 export * from "./investigadoresApi";
 export * from "./administradoresApi";
 export * from "./personalApi"
-export * from "./ubicacionesApi"
 export * from "./recuperacionApi"
 export * from "./InfraestructuraApi"
 export * from "./estadisticasApi"
@@ -12,3 +11,4 @@ export * from "./reportesApi"
 export * from "./estudiantilApi"
 export * from "./extracurricularApi"
 export * from "./chatSocket"
+export * from "./mensajeriaService"

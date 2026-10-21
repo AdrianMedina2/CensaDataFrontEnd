@@ -11,8 +11,6 @@ import Censos from "./pages/Censos/Censos.jsx";
 import AuthRole from "./components/Auth/AuthRole.jsx";
 import Investigadores from "./pages/Investigadores/Investigadores.jsx";
 import Personal from "./pages/Personal/Personal.jsx"
-import Ubicaciones from "./pages/Ubicaciones/Ubicaciones.jsx";
-import Infraestructura from "./pages/Infraestructura/Infraestructura.jsx";
 import Dashboard from "./pages/Dashboard/Dashboard.jsx";
 import Encuestas from "./pages/Encuestas/Encuestas.jsx";
 import Manual from "./pages/Manual/Manual.jsx";
@@ -87,26 +85,6 @@ function App() {
                     <RequireAuth>
                         <AuthRole allowed={["ADMINISTRADOR"]}>
                             <MainLayout><Personal /></MainLayout>
-                        </AuthRole>
-                    </RequireAuth>
-                }
-            />
-            <Route
-                path="/ubicaciones"
-                element={
-                    <RequireAuth>
-                        <AuthRole allowed={["ADMINISTRADOR"]}>
-                            <MainLayout><Ubicaciones /></MainLayout>
-                        </AuthRole>
-                    </RequireAuth>
-                }
-            />
-            <Route
-                path="/infraestructura"
-                element={
-                    <RequireAuth>
-                        <AuthRole allowed={["ADMINISTRADOR"]}>
-                            <MainLayout><Infraestructura /></MainLayout>
                         </AuthRole>
                     </RequireAuth>
                 }
