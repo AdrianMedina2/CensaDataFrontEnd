@@ -1,8 +1,3 @@
-/* Estilos propios del chat */
-.chat-page {
-    background: #f5f7fb;
-    font-family: var(--font-family, 'Poppins', sans-serif);
-}
 .chat-min-height { min-height: 0; }
 
 .chat-min-width { min-width: 0; }

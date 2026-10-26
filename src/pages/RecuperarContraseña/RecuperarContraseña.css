@@ -1,9 +1,49 @@
-/* RecuperarContraseña.css
-    Archivo reservado para estilos específicos de la página RecuperarContraseña.
-    Añadir reglas aquí cuando haga falta.
-*/
-
-/* Placeholder mínimo para evitar warnings de archivos vacíos */
 .recuperar-contraseña-page {
-    min-height: 100vh;
+    width: 100%;
+}
+
+.recuperacion-paso {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #e9ecef;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.recuperacion-paso.activo {
+    background: var(--color-brand);
+    color: #fff;
+}
+
+.recuperacion-linea {
+    width: 45px;
+    height: 2px;
+    background: #dee2e6;
+}
+
+.recuperacion-linea.activa {
+    background: var(--color-brand);
+}
+
+.recuperacion-codigo {
+    letter-spacing: 3px;
+}
+
+.recuperacion-exito {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #d1e7dd;
+    color: #198754;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    font-weight: bold;
 }

@@ -13,7 +13,7 @@ export default function Home() {
             <div className="text-center mb-5">
                 <h1 className="display-4 fw-bold color-brand fs-1">Bienvenido a CensaData</h1>
                 <p className="lead text-muted fade-in slow">
-                    Plataforma para gestión y análisis de datos censales del INIDE.
+                    Plataforma para gestión y análisis de datos censales de los becados internos de la Universidad Nacional Autónoma de Nicaragua, Managua (UNAN-Managua).
                 </p>
             </div>
 

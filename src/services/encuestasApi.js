@@ -11,3 +11,11 @@ export const encuestasApi = {
         }
     },
 };
+
+// Crear un comentario
+export const createComentario = async (data) => {
+    const res = await api.post("/api/Comentarios/", data);
+    return res.data;
+};
+
+

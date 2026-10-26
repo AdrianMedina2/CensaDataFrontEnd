@@ -1,33 +1,59 @@
-/* Overlay de carga */
+/* Estilos mínimos: estructura masonry y dimensiones de Nivo. */
 .overlay-loading {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(33, 37, 41, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    inset: 0;
     z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(33, 37, 41, .7);
 }
-
-/* KPI Cards */
-.card h6 {
-    font-size: 0.9rem;
+.dashboard-grid-graficos { columns: 2; column-gap: 1.5rem; }
+.dashboard-card-grafico {
+    display: inline-block;
+    width: 100%;
+    margin-bottom: 1.5rem;
+    break-inside: avoid;
+    -webkit-column-break-inside: avoid;
+    vertical-align: top;
 }
-
-.card h3 {
-    font-size: 1.6rem;
-    margin: 0.5rem 0;
+.dashboard-card-header { padding: .75rem 1rem; }
+.dashboard-card-header > span { min-width: 0; }
+.dashboard-tipo-selector {
+    width: auto;
+    min-width: 95px;
+    max-width: 110px;
+    flex-shrink: 0;
+    font-size: .8rem;
+    color: var(--bs-primary, #3155d9);
+    background-color: var(--bs-white, #fff);
+    cursor: pointer;
 }
-
-/* Chart cards */
-.card-header {
-    font-size: 1rem;
-    letter-spacing: 0.5px;
+/* Al pasar el mouse, texto negro sobre fondo claro. */
+.dashboard-tipo-selector:hover,
+.dashboard-tipo-selector:focus {
+    color: #212529;
+    background-color: var(--bs-light, #f8f9fa);
+    border-color: var(--bs-primary, #3155d9);
 }
-
-.card-body {
-    padding: 1rem;
+/* El menú desplegable nativo conserva colores legibles. */
+.dashboard-tipo-selector option { color: #344054; background: #fff; }
+.dashboard-grafico { width: 100%; min-width: 0; }
+.dashboard-sin-datos { min-height: 180px; }
+.dashboard-tooltip {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 7px 10px;
+    font-size: 12px;
+    color: #212529;
+}
+.dashboard-tooltip strong { font-weight: 600; }
+.dashboard-leyenda-externa span:last-child { overflow-wrap: anywhere; }
+@media (max-width: 991.98px) {
+    .dashboard-grid-graficos { columns: 1; }
+}
+@media (max-width: 575.98px) {
+    .dashboard-card-header { flex-wrap: wrap; }
+    .dashboard-card-grafico .card-body { padding: .5rem; }
 }

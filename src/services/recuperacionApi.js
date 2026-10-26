@@ -8,7 +8,7 @@ export const requestRecovery = (correo) => {
 
 // 2. Verificar código y obtener token
 export const verifyRecovery = (correo, code) => {
-    return api.post("/api/recovery/verify/", { Id: correo, code });
+    return api.post("/api/recovery/verify/", { correo, code });
 };
 
 // 3. Cambiar contraseña usando token
