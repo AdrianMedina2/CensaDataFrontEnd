@@ -1,20 +1,21 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import PersonaEmpadronadoForm from "../../components/Encuestas/PersonaEmpadronadoForm";
 import ConfirmModal from "../../components/ConfirmModal.jsx/ConfirmModal";
 import ValidatedInput from "../../components/ValidatedInput/ValidatedInput";
+import ToastMessage from "../../components/ToastMessage/ToastMessage";
 import {
     getCensos,
     getDiscapacidades,
     getCarreras,
     getEventos,
     getActividadesExtraCurriculares,
-    encuestasApi
+    encuestasApi,
+    EncuestaRechazada
 } from "../../services";
 import "./Encuestas.css";
 const fechaActual = () => {
     return new Date().toISOString().split("T")[0];
 };
-
 const crearPersona = () => ({
     primernombre: "",
     segundonombre: "",
@@ -24,7 +25,6 @@ const crearPersona = () => ({
     fechanacimiento: "",
     discapacidades: []
 });
-
 const crearEmpadronado = () => ({
     numerocedula: "",
     contacto: "",
@@ -35,37 +35,31 @@ const crearEmpadronado = () => ({
     eventos: [],
     actividades: []
 });
-
 const crearEncuesta = () => ({
     censoid: "",
     fechainicio: fechaActual(),
     fechafin: fechaActual(),
     respuesta: "POSITIVA"
 });
-
 const crearCasa = () => ({
     numcasa: ""
 });
-
-//* Comentario general de la encuesta: el tipo se calcula con las estrellas.*
+//** Comentario general de la encuesta: el tipo se calcula con las estrellas.**
 const crearComentario = () => ({
     comentario: "",
     calificacion: 0
 });
-
 const obtenerTipoComentario = (calificacion) => {
     if (calificacion <= 2) return "queja";
     if (calificacion === 3) return "neutral";
     return "satisfacción";
 };
-
 const obtenerLista = (respuesta) => {
     const datos = respuesta?.data ?? respuesta;
     if (Array.isArray(datos)) return datos;
     if (Array.isArray(datos?.results)) return datos.results;
     return [];
 };
-
 const convertirLista = (lista, prefijo, convertir) =>
     Object.fromEntries(
         lista.map((elemento, i) => [
@@ -73,7 +67,6 @@ const convertirLista = (lista, prefijo, convertir) =>
             convertir(elemento)
         ])
     );
-
 const normalizarPersona = (persona = {}) => {
     const discapacidades = Array.isArray(persona.discapacidades)
         ? persona.discapacidades
@@ -88,7 +81,6 @@ const normalizarPersona = (persona = {}) => {
         discapacidades: discapacidades.map(Number)
     };
 };
-
 const normalizarEmpadronado = (empadronado = {}) => ({
     ...crearEmpadronado(),
     ...empadronado,
@@ -99,14 +91,12 @@ const normalizarEmpadronado = (empadronado = {}) => ({
         ? empadronado.actividades
         : []
 });
-
 const tieneDatos = (objeto = {}, ignorar = []) =>
     Object.entries(objeto).some(([clave, valor]) => {
         if (ignorar.includes(clave)) return false;
         if (Array.isArray(valor)) return valor.length > 0;
         return valor !== "" && valor !== null && valor !== undefined;
     });
-
 const hasValidDraft = (draft) => {
     if (!draft || typeof draft !== "object") return false;
     return (
@@ -120,10 +110,11 @@ const hasValidDraft = (draft) => {
             tieneDatos(e, ["eventos", "actividades"])
         ) ||
         Boolean(draft.comentario?.comentario?.trim()) ||
-        Number(draft.comentario?.calificacion) > 0
+        Number(draft.comentario?.calificacion) > 0 ||
+        Boolean(draft.motivoRechazo?.trim()) ||
+        Boolean(draft.contextoEvidencia?.trim())
     );
 };
-
 export default function EncuestaForm() {
     const [censos, setCensos] = useState([]);
     const [discapacidades, setDiscapacidades] = useState([]);
@@ -135,12 +126,31 @@ export default function EncuestaForm() {
     const [personas, setPersonas] = useState([crearPersona()]);
     const [empadronados, setEmpadronados] = useState([crearEmpadronado()]);
     const [comentario, setComentario] = useState(crearComentario);
+    const [tipoEncuesta, setTipoEncuesta] = useState("POSITIVA");
+    const [motivoRechazo, setMotivoRechazo] = useState("");
+    const [contextoEvidencia, setContextoEvidencia] = useState("");
+    const [imagenEvidencia, setImagenEvidencia] = useState(null);
+    const imagenInputRef = useRef(null);
+    const erroresRechazo = {
+        motivoRechazo: !motivoRechazo.trim() ? "Ingresá el motivo del rechazo." : "",
+        contextoEvidencia: !contextoEvidencia.trim() ? "Ingresá el contexto de la evidencia." : "",
+        imagenEvidencia: !imagenEvidencia
+            ? "Adjuntá una fotografía de evidencia."
+            : !imagenEvidencia.type?.startsWith("image/")
+                ? "El archivo seleccionado debe ser una imagen."
+                : ""
+    };
     const [activePersonaIndex, setActivePersonaIndex] = useState(0);
     const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(true);
     const [loadingSubmit, setLoadingSubmit] = useState(false);
-    const [successSubmit, setSuccessSubmit] = useState(false);
-    const [error, setError] = useState("");
+    const [toast, setToast] = useState(null);
+    const toastIdRef = useRef(0);
+    const mostrarToast = useCallback((message, type = "info", autohide = true, delay = 4000) => {
+        toastIdRef.current += 1;
+        setToast({ id: toastIdRef.current, message, type, autohide, delay });
+    }, []);
+    const cerrarToast = useCallback(() => setToast(null), []);
     const [errorCatalogos, setErrorCatalogos] = useState("");
     const [showDraftModal, setShowDraftModal] = useState(false);
     const [showComentarioModal, setShowComentarioModal] = useState(false);
@@ -148,7 +158,7 @@ export default function EncuestaForm() {
     const [draftData, setDraftData] = useState(null);
     const borradorRevisado = useRef(false);
     const omitirGuardado = useRef(false);
-    //** Cargar los catálogos del backend**
+    //*** Cargar los catálogos del backend***
     useEffect(() => {
         let activo = true;
         const cargarCatalogos = async () => {
@@ -169,9 +179,9 @@ export default function EncuestaForm() {
             } catch (err) {
                 console.error("Error cargando catálogos:", err);
                 if (activo) {
-                    setErrorCatalogos(
-                        "No se pudieron cargar todos los catálogos. Recargá la página para intentarlo nuevamente."
-                    );
+                    const aviso = "No se pudieron cargar todos los catálogos. Recargá la página para intentarlo nuevamente.";
+                    setErrorCatalogos(aviso);
+                    mostrarToast(aviso, "warning", false);
                 }
             } finally {
                 if (activo) setLoading(false);
@@ -181,8 +191,8 @@ export default function EncuestaForm() {
         return () => {
             activo = false;
         };
-    }, []);
-    //** Revisar si existe un borrador**
+    }, [mostrarToast]);
+    //*** Revisar si existe un borrador***
     useEffect(() => {
         try {
             const guardado = localStorage.getItem("encuestaDraft");
@@ -202,7 +212,7 @@ export default function EncuestaForm() {
             borradorRevisado.current = true;
         }
     }, []);
-    //** Guardado automático del borrador**
+    //*** Guardado automático del borrador***
     useEffect(() => {
         if (loading || !borradorRevisado.current || showDraftModal) return;
         if (omitirGuardado.current) {
@@ -215,7 +225,10 @@ export default function EncuestaForm() {
             personas,
             empadronados,
             comentario,
-            activePersonaIndex
+            activePersonaIndex,
+            tipoEncuesta,
+            motivoRechazo,
+            contextoEvidencia
         };
         try {
             if (hasValidDraft(data)) {
@@ -233,18 +246,20 @@ export default function EncuestaForm() {
         empadronados,
         comentario,
         activePersonaIndex,
+        tipoEncuesta,
+        motivoRechazo,
+        contextoEvidencia,
         loading,
         showDraftModal
     ]);
-    useEffect(() => {
-        if (!successSubmit) return;
-        const timer = setTimeout(() => setSuccessSubmit(false), 3000);
-        return () => clearTimeout(timer);
-    }, [successSubmit]);
     const handleUseDraft = () => {
         if (draftData) {
             setCasa({ ...crearCasa(), ...draftData.Casa });
             setComentario({ ...crearComentario(), ...draftData.comentario });
+            setTipoEncuesta(draftData.tipoEncuesta === "NEGATIVA" ? "NEGATIVA" : "POSITIVA");
+            setMotivoRechazo(draftData.motivoRechazo || "");
+            setContextoEvidencia(draftData.contextoEvidencia || "");
+            setImagenEvidencia(null); // Los archivos no se almacenan en localStorage.
             setEncuesta({
                 ...crearEncuesta(),
                 ...draftData.encuestainide,
@@ -286,12 +301,17 @@ export default function EncuestaForm() {
     const handleReset = () => {
         omitirGuardado.current = true;
         setSubmitted(false);
-        setError("");
+        cerrarToast();
         setEncuesta(crearEncuesta());
         setCasa(crearCasa());
         setPersonas([crearPersona()]);
         setEmpadronados([crearEmpadronado()]);
         setComentario(crearComentario());
+        setTipoEncuesta("POSITIVA");
+        setMotivoRechazo("");
+        setContextoEvidencia("");
+        setImagenEvidencia(null);
+        if (imagenInputRef.current) imagenInputRef.current.value = "";
         setShowComentarioModal(false);
         setComentarioIntentado(false);
         setActivePersonaIndex(0);
@@ -302,7 +322,7 @@ export default function EncuestaForm() {
         setEmpadronados(prev => [...prev, crearEmpadronado()]);
         setActivePersonaIndex(personas.length);
         setSubmitted(false);
-        setError("");
+        cerrarToast();
     };
     const removePersona = (index) => {
         if (personas.length <= 1) return;
@@ -354,7 +374,7 @@ export default function EncuestaForm() {
                 e.carreraid !== null &&
                 e.carreraid !== undefined &&
                 /^\d{8}$/.test(e.carnet || "");
-            //** Eventos opcionales, pero con posición si se seleccionan**
+            //*** Eventos opcionales, pero con posición si se seleccionan***
             const eventosValidos = (e.eventos || []).every(
                 evento =>
                     evento.id !== "" &&
@@ -453,20 +473,73 @@ export default function EncuestaForm() {
             }
         };
     };
+    // El backend recibe el JSON en "data" y la foto en "image".
+    const construirPayloadNegativo = () => ({
+        Casa: {
+            numcasa: Number(Casa.numcasa),
+            serviciodeagua: 1,
+            serviciodeenergia: 1,
+            infraestructuraid: 1
+        },
+        encuestarecidente: {
+            respuesta: "NEGATIVA",
+            censoid: Number(encuestainide.censoid),
+            fechainicio: fechaActual(),
+            fechafin: fechaActual()
+        },
+        incidencia: {
+            fecha: fechaActual(),
+            comentario: motivoRechazo.trim()
+        },
+        evidencia: {
+            contexto: contextoEvidencia.trim()
+        }
+    });
+    const enviarEncuestaNegativa = async () => {
+        const primerError = Object.values(erroresRechazo).find(Boolean);
+        if (primerError) {
+            mostrarToast(primerError, "error");
+            return;
+        }
+        const formData = new FormData();
+        formData.append("data", JSON.stringify(construirPayloadNegativo()));
+        formData.append("image", imagenEvidencia);
+        setLoadingSubmit(true);
+        try {
+            await EncuestaRechazada(formData);
+            handleReset();
+            mostrarToast("Encuesta negativa registrada con éxito ✅", "success");
+        } catch (err) {
+            console.error("Error enviando encuesta negativa:", err);
+            const detalle = err?.response?.data;
+            const mensajeBackend = typeof detalle === "string"
+                ? (!/<(?:!doctype|html|head|body)\b/i.test(detalle) && detalle.length <= 250 ? detalle : null)
+                : typeof detalle?.detail === "string" ? detalle.detail
+                : typeof detalle?.message === "string" ? detalle.message : null;
+            mostrarToast(mensajeBackend ? `No se pudo registrar la encuesta negativa: ${mensajeBackend}` :
+                "No se pudo registrar la encuesta negativa. Revisá los datos y la conexión.", "error", true, 6000);
+        } finally {
+            setLoadingSubmit(false);
+        }
+    };
     const handleSubmit = async () => {
         if (loadingSubmit) return;
         setSubmitted(true);
-        setError("");
+        cerrarToast();
         if (
             encuestainide.censoid === "" ||
             encuestainide.censoid === null ||
             encuestainide.censoid === undefined
         ) {
-            setError("Seleccioná el censo de la encuesta.");
+            mostrarToast("Seleccioná el censo de la encuesta.", "error");
             return;
         }
         if (!validateCasa()) {
-            setError("Ingresá un número de casa válido.");
+            mostrarToast("Ingresá un número de casa válido.", "error");
+            return;
+        }
+        if (tipoEncuesta === "NEGATIVA") {
+            await enviarEncuestaNegativa();
             return;
         }
         if (!validatePersonas()) {
@@ -476,23 +549,29 @@ export default function EncuestaForm() {
                 return (
                     p.primernombre?.trim().length < 3 ||
                     p.primerapellido?.trim().length < 3 ||
-                    !p.sexo ||
+                    !["M", "F"].includes(p.sexo) ||
                     !p.fechanacimiento ||
+                    p.fechanacimiento > fechaActual() ||
                     !/^[A-Za-z0-9]{14}$/.test(e.numerocedula || "") ||
                     !/^\d{8}$/.test(e.contacto || "") ||
-                    !e.semestre ||
+                    !Number.isInteger(Number(e.semestre)) ||
+                    Number(e.semestre) < 1 ||
+                    Number(e.semestre) > 12 ||
                     !e.tipobeca ||
                     e.carreraid === "" ||
                     e.carreraid == null ||
                     !/^\d{8}$/.test(e.carnet || "") ||
-                    (e.eventos || []).some(ev => !ev.posicion?.trim())
+                    (e.eventos || []).some(ev =>
+                        ev.id === "" || ev.id == null || !ev.posicion?.trim()
+                    )
                 );
             });
             if (primerInvalido >= 0) {
                 setActivePersonaIndex(primerInvalido);
             }
-            setError(
-                "Revisá los datos obligatorios de los estudiantes. Si seleccionaste eventos, ingresá también sus posiciones."
+            mostrarToast(
+                "Revisá los datos obligatorios de los estudiantes. Si seleccionaste eventos, ingresá también sus posiciones.",
+                "error", true, 6000
             );
             return;
         }
@@ -504,7 +583,10 @@ export default function EncuestaForm() {
         setComentarioIntentado(true);
         if (!Number.isInteger(Number(comentario.calificacion)) ||
             Number(comentario.calificacion) < 1 ||
-            Number(comentario.calificacion) > 5) return;
+            Number(comentario.calificacion) > 5) {
+            mostrarToast("Seleccioná una calificación de 1 a 5 estrellas.", "warning");
+            return;
+        }
         setShowComentarioModal(false);
         setLoadingSubmit(true);
         try {
@@ -512,11 +594,11 @@ export default function EncuestaForm() {
             console.log("Payload a enviar:", payload);
             await encuestasApi.create(payload);
             handleReset();
-            setSuccessSubmit(true);
+            mostrarToast("Encuesta añadida con éxito ✅", "success");
         } catch (err) {
             console.error("Error enviando encuesta:", err);
-            setError(
-                "No se pudo guardar la encuesta. Revisá los datos e intentá nuevamente."
+            mostrarToast(
+                "No se pudo guardar la encuesta. Revisá los datos e intentá nuevamente.", "error", true, 6000
             );
         } finally {
             setLoadingSubmit(false);
@@ -538,17 +620,14 @@ export default function EncuestaForm() {
     return (
         <div>
             <h2 className="mt-2 mb-4 fw-bold">📋 Nueva Encuesta</h2>
-            {errorCatalogos && (
-                <div className="alert alert-warning" role="alert">
-                    {errorCatalogos}
-                </div>
-            )}
-            {error && (
-                <div className="alert alert-danger" role="alert">
-                    <i className="bi bi-exclamation-circle me-2"></i>
-                    {error}
-                </div>
-            )}
+            <div className="mb-4">
+                <label className="form-label fw-semibold" htmlFor="tipoEncuesta">Tipo de encuesta</label>
+                <select id="tipoEncuesta" className="form-select" value={tipoEncuesta}
+                    onChange={e => { setTipoEncuesta(e.target.value); setImagenEvidencia(null); if (imagenInputRef.current) imagenInputRef.current.value = ""; cerrarToast(); setSubmitted(false); setShowComentarioModal(false); }}>
+                    <option value="POSITIVA">Positiva</option>
+                    <option value="NEGATIVA">Negativa (Incidente)</option>
+                </select>
+            </div>
             <h4 className="mt-2 mb-4 fw-bold">Datos de la Encuesta</h4>
             <div className="mb-3">
                 <label className="form-label">Censo de la encuesta</label>
@@ -602,6 +681,73 @@ export default function EncuestaForm() {
                     />
                 </div>
             </div>
+            {tipoEncuesta === "NEGATIVA" ? (
+                <div className="mb-4">
+                    <h4 className="fw-bold mb-3">Datos del rechazo</h4>
+                    <div className="mb-3">
+                        <label className="form-label" htmlFor="motivoRechazo">Motivo del rechazo</label>
+                        <textarea
+                            id="motivoRechazo"
+                            className={`form-control ${submitted && erroresRechazo.motivoRechazo ? "is-invalid" : ""}`}
+                            rows={3}
+                            value={motivoRechazo}
+                            onChange={e => setMotivoRechazo(e.target.value)}
+                            placeholder="Describa la incidencia"
+                            aria-invalid={submitted && Boolean(erroresRechazo.motivoRechazo)}
+                            aria-describedby={submitted && erroresRechazo.motivoRechazo ? "errorMotivoRechazo" : undefined}
+                        />
+                        {submitted && erroresRechazo.motivoRechazo && (
+                            <div id="errorMotivoRechazo" className="invalid-feedback d-block">
+                                {erroresRechazo.motivoRechazo}
+                            </div>
+                        )}
+                    </div>
+                    <div className="mb-3">
+                        <label className="form-label" htmlFor="contextoEvidencia">Contexto de la evidencia</label>
+                        <textarea
+                            id="contextoEvidencia"
+                            className={`form-control ${submitted && erroresRechazo.contextoEvidencia ? "is-invalid" : ""}`}
+                            rows={3}
+                            value={contextoEvidencia}
+                            onChange={e => setContextoEvidencia(e.target.value)}
+                            placeholder="Describa qué muestra la fotografía"
+                            aria-invalid={submitted && Boolean(erroresRechazo.contextoEvidencia)}
+                            aria-describedby={submitted && erroresRechazo.contextoEvidencia ? "errorContextoEvidencia" : undefined}
+                        />
+                        {submitted && erroresRechazo.contextoEvidencia && (
+                            <div id="errorContextoEvidencia" className="invalid-feedback d-block">
+                                {erroresRechazo.contextoEvidencia}
+                            </div>
+                        )}
+                    </div>
+                    <div className="mb-3">
+                        <label className="form-label" htmlFor="imagenEvidencia">Fotografía de evidencia</label>
+                        <input
+                            id="imagenEvidencia"
+                            ref={imagenInputRef}
+                            className={`form-control ${submitted && erroresRechazo.imagenEvidencia ? "is-invalid" : ""}`}
+                            type="file"
+                            accept="image/*"
+                            onChange={e => setImagenEvidencia(e.target.files?.[0] ?? null)}
+                            aria-invalid={submitted && Boolean(erroresRechazo.imagenEvidencia)}
+                            aria-describedby={submitted && erroresRechazo.imagenEvidencia ? "errorImagenEvidencia" : "ayudaImagenEvidencia"}
+                        />
+                        {submitted && erroresRechazo.imagenEvidencia && (
+                            <div id="errorImagenEvidencia" className="invalid-feedback d-block">
+                                {erroresRechazo.imagenEvidencia}
+                            </div>
+                        )}
+                        {imagenEvidencia && !erroresRechazo.imagenEvidencia ? (
+                            <small className="text-muted d-block mt-1">Archivo: {imagenEvidencia.name}</small>
+                        ) : !imagenEvidencia ? (
+                            <small id="ayudaImagenEvidencia" className="text-muted d-block mt-1">
+                                Seleccioná una fotografía antes de enviar. Las imágenes no se guardan en los borradores.
+                            </small>
+                        ) : null}
+                    </div>
+                </div>
+            ) : (
+                <>
             <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-4 mb-3">
                 <h4 className="fw-bold mb-0">Estudiantes</h4>
                 <span className="badge bg-light text-dark border">
@@ -670,6 +816,8 @@ export default function EncuestaForm() {
                         onChangeEmpadronado={onChangeEmpadronado}
                     />
                 )}
+                </>
+            )}
             <button
                 type="button"
                 className="btn btn-brand mt-4"
@@ -685,7 +833,7 @@ export default function EncuestaForm() {
                         Enviando...
                     </>
                 ) : (
-                    "Enviar Encuesta"
+                    tipoEncuesta === "NEGATIVA" ? "Registrar rechazo" : "Enviar Encuesta"
                 )}
             </button>
             {showComentarioModal && (
@@ -761,12 +909,15 @@ export default function EncuestaForm() {
                     </p>
                 </div>
             )}
-            {successSubmit && (
-                <div className="overlay-success">
-                    <div className="alert alert-success text-center">
-                        Encuesta añadida con éxito ✅
-                    </div>
-                </div>
+            {toast && (
+                <ToastMessage
+                    key={toast.id}
+                    message={toast.message}
+                    type={toast.type}
+                    autohide={toast.autohide}
+                    delay={toast.delay}
+                    onClose={cerrarToast}
+                />
             )}
         </div>
     );

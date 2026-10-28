@@ -19,3 +19,7 @@ export const createComentario = async (data) => {
 };
 
 
+export const EncuestaRechazada = async (data) => {
+    const res = await api.post("/api/EncuestaRechazada/", data);
+    return res.data;
+};
