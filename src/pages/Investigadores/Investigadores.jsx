@@ -207,29 +207,34 @@ export default function Investigadores() {
 
     return (
         <div>
-            <h2 className="fw-bold mt-2 mb-4">👤 Gestionar investigadores</h2>
-            <button
-                className="btn btn-brand mb-3"
-                onClick={() => {
-                    if (!processing) {
-                        setValidated(false); // reinicia validación
-                        setFormData({
-                            usuario: "",
-                            correo: "",
-                            password: "",
-                            primernombre: "",
-                            primerapellido: "",
-                            edad: "",
-                            sexo: "",
-                            administradorid: ""
-                        });
-                        setShowModal(true);
-                    }
-                }}
-                disabled={processing} //bloquea el botón
-            >
-                <i className="bi bi-person-plus me-2"></i> Registrar nuevo investigador
-            </button>
+
+            <h2 className="fw-bold mt-2 mb-4 d-flex justify-content-between align-items-center">
+                👤 Gestionar investigadores
+                <button
+                    className="btn btn-brand"
+                    onClick={() => {
+                        if (!processing) {
+                            setValidated(false);
+                            setFormData({
+                                usuario: "",
+                                correo: "",
+                                password: "",
+                                primernombre: "",
+                                primerapellido: "",
+                                edad: "",
+                                sexo: "",
+                                administradorid: ""
+                            });
+                            setShowModal(true);
+                        }
+                    }}
+                    disabled={processing}
+                >
+                    <i className="bi bi-person-plus me-2"></i>
+                    Registrar nuevo investigador
+                </button>
+            </h2>
+
 
             <EditableTable
                 columns={columns}
@@ -263,7 +268,7 @@ export default function Investigadores() {
                     onClose={() => setMessage(null)}
                 />
             )}
-            
+
             {/* Modal Bootstrap con validaciones */}
             {showModal && (
                 <div className="modal show d-block fade-in fast" tabIndex="-1">
@@ -453,7 +458,7 @@ export default function Investigadores() {
                                 </div>
                                 <div className="modal-footer">
                                     <button type="submit" className="btn btn-success hover-lift">
-                                        <i className="bi bi-check-circle me-1"></i> Guardar
+                                        <i className="bi bi-check-circle me-1"></i> Registrar
                                     </button>
                                     <button
                                         type="button"

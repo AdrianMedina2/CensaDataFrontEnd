@@ -1,0 +1,9 @@
+/* Solo detalles que Bootstrap no ofrece como utilidades. */
+.censo-accent {
+    height: 5px;
+    background: linear-gradient(90deg, var(--color-brand), #7864e9);
+}
+.censo-icon { width: 46px; height: 46px; }
+.censo-date-icon { width: 36px; height: 36px; }
+.censo-card { transition: box-shadow .25s ease; }
+.censo-card:hover { box-shadow: 0 12px 28px rgba(24, 39, 75, .13) !important; }

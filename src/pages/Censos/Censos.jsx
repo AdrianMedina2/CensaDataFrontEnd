@@ -4,7 +4,20 @@ import TiltCard from "../../components/TiltCard/TiltCard.jsx";
 import ConfirmModal from "../../components/ConfirmModal.jsx/ConfirmModal.jsx";
 import ToastMessage from "../../components/ToastMessage/ToastMessage.jsx";
 import ValidatedInput from "../../components/ValidatedInput/ValidatedInput.jsx";
-
+import "./Censos.css";
+const extraerCensos = (respuesta) => {
+    const contenido = respuesta?.data ?? respuesta;
+    if (Array.isArray(contenido)) return contenido;
+    if (Array.isArray(contenido?.data)) return contenido.data;
+    return [];
+};
+const fechaSolo = (fecha) => typeof fecha === "string" ? fecha.split("T")[0] : "";
+const fechaLegible = (fecha) => {
+    const valor = fechaSolo(fecha);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) return "Sin fecha";
+    const [anio, mes, dia] = valor.split("-");
+    return `${dia}/${mes}/${anio}`;
+};
 export default function Censos() {
     const [censos, setCensos] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -17,42 +30,30 @@ export default function Censos() {
     const [submittedEdit, setSubmittedEdit] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const hoy = new Date();
-    const yyyy = hoy.getUTCFullYear();
-    const mm = String(hoy.getUTCMonth() + 1).padStart(2, "0");
-    const dd = String(hoy.getUTCDate()).padStart(2, "0");
+    const yyyy = hoy.getFullYear();
+    const mm = String(hoy.getMonth() + 1).padStart(2, "0");
+    const dd = String(hoy.getDate()).padStart(2, "0");
     const today = `${yyyy}-${mm}-${dd}`;
-
-    const handleDeleteClick = (id) => {
-        setDeleteId(id);
-        setShowConfirm(true);
-    };
-
     const confirmDelete = async () => {
         setShowConfirm(false);
         await handleDelete(deleteId);
     };
-
-
     const [formData, setFormData] = useState({
         nombrecenso: "",
         fechainiciocenso: today,
         fechafincenso: "",
-        poblaciontotal: "",
+        poblaciontotal: 0,
     });
-
     const [editId, setEditId] = useState(null);
     const [editData, setEditData] = useState({
-        nombrecenso: "",
         fechainiciocenso: "",
         fechafincenso: "",
-        poblaciontotal: "",
     });
-
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const res = await getCensos();
-                setCensos(Array.isArray(res.data) ? res.data : []);
+                setCensos(extraerCensos(res));
             } catch (err) {
                 setError("Error al cargar censos");
                 console.error(err);
@@ -62,22 +63,11 @@ export default function Censos() {
         };
         fetchData();
     }, []);
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
-    };
-
     const handleCreate = async (e) => {
         e.preventDefault();
         setProcessing(true);
         setSubmittedCreate(true);
-
         if (!formData.nombrecenso || formData.nombrecenso.length < 3) {
-            setProcessing(false);
-            return;
-        }
-        if (!formData.poblaciontotal || parseInt(formData.poblaciontotal) <= 0) {
             setProcessing(false);
             return;
         }
@@ -85,47 +75,35 @@ export default function Censos() {
             setProcessing(false);
             return;
         }
-
-        const inicio = new Date(formData.fechainiciocenso + "T00:00:00Z");
-        const fin = new Date(formData.fechafincenso + "T00:00:00Z");
-
-        const hoyUTC = new Date(today + "T00:00:00Z");
-
-        if (inicio < hoyUTC) {
+        if (formData.fechainiciocenso < today) {
             setProcessing(false);
             setMessage({ type: "danger", text: "La fecha de inicio no puede ser anterior a hoy" });
             return;
         }
-        if (fin < inicio) {
+        if (formData.fechafincenso < formData.fechainiciocenso) {
             setProcessing(false);
             setMessage({ type: "danger", text: "La fecha de fin no puede ser anterior a la de inicio" });
             return;
         }
         try {
-            await createCenso(formData);
+            await createCenso({ ...formData, poblaciontotal: 0, muestrapoblacional: 0 });
             const resAll = await getCensos();
-            setCensos(Array.isArray(resAll.data) ? resAll.data : []);
-
+            setCensos(extraerCensos(resAll));
             setFormData({
                 nombrecenso: "",
-                poblaciontotal: "",
+                poblaciontotal: 0,
                 fechainiciocenso: today,
                 fechafincenso: ""
             });
             setSubmittedCreate(false);
             setMessage({ type: "success", text: "Censo creado exitosamente ✅" });
-
             setShowCreateModal(false);
         } catch (err) {
             console.error("Error al crear censo:", err.response?.data || err);
             setMessage({ type: "danger", text: "Error al crear censo ❌" });
         }
-
-
         setProcessing(false);
     };
-
-
     const handleDelete = async (id) => {
         setProcessing(true);
         try {
@@ -138,50 +116,38 @@ export default function Censos() {
         }
         setProcessing(false);
     };
-
-
     const handleEditClick = (censo) => {
         setEditId(censo.id);
+        setSubmittedEdit(false);
         setEditData({
-            nombrecenso: censo.nombrecenso,
-            poblaciontotal: censo.poblaciontotal,
-            fechafincenso: censo.fechafincenso.split("T")[0],
+            fechainiciocenso: fechaSolo(censo.fechainiciocenso),
+            fechafincenso: fechaSolo(censo.fechafincenso),
         });
     };
-
-    const handleEditChange = (e) => {
-        const { name, value } = e.target;
-        setEditData((prev) => ({ ...prev, [name]: value }));
-    };
-
     const handleEditSave = async (id) => {
-        setProcessing(true);
         setSubmittedEdit(true);
-
-        if (!editData.nombrecenso || editData.nombrecenso.length < 3) {
-            setProcessing(false);
-            return;
-        }
-        if (new Date(editData.fechafincenso) < new Date(editData.fechainiciocenso)) {
-            setProcessing(false);
-            return;
-        }
-
+        if (!editData.fechainiciocenso || !editData.fechafincenso) return;
+        if (editData.fechafincenso < editData.fechainiciocenso) return;
+        setProcessing(true);
         try {
-            const res = await patchCenso(id, editData);
-            const actualizado = res.data;
-            setCensos((prev) =>
-                prev.map((c) => (c.id === id ? { ...c, ...actualizado } : c))
-            );
+            const payload = {
+                fechainiciocenso: editData.fechainiciocenso,
+                fechafincenso: editData.fechafincenso,
+            };
+            await patchCenso(id, payload);
+            setCensos((prev) => prev.map((censo) =>
+                censo.id === id ? { ...censo, ...payload } : censo
+            ));
             setEditId(null);
+            setSubmittedEdit(false);
             setMessage({ type: "success", text: "Censo editado correctamente ✏️" });
         } catch (err) {
             console.error("Error al editar censo:", err.response?.data || err);
             setMessage({ type: "danger", text: "Error al editar censo ❌" });
+        } finally {
+            setProcessing(false);
         }
-        setProcessing(false);
     };
-
     if (loading) {
         return (
             <div className="d-flex justify-content-center align-items-center mt-5">
@@ -191,12 +157,9 @@ export default function Censos() {
             </div>
         );
     }
-
     if (error) return <p>{error}</p>;
-
     return (
-        <div className="container">
-
+        <div className="container-fluid px-0">
             {processing && (
                 <ToastMessage
                     message={
@@ -210,8 +173,6 @@ export default function Censos() {
                     onClose={() => setProcessing(false)}
                 />
             )}
-
-            {/* Mensajes de confirmación */}
             {message && (
                 <ToastMessage
                     message={message.text}
@@ -221,7 +182,6 @@ export default function Censos() {
                     onClose={() => setMessage(null)}
                 />
             )}
-
             {showConfirm && (
                 <ConfirmModal
                     show={showConfirm}
@@ -231,7 +191,6 @@ export default function Censos() {
                     onCancel={() => setShowConfirm(false)}
                 />
             )}
-
             <h2 className="fw-bold mt-2 mb-4 d-flex justify-content-between align-items-center">
                 🗂️ Gestionar Censos
                 <button
@@ -241,7 +200,6 @@ export default function Censos() {
                     Crear nuevo censo
                 </button>
             </h2>
-
             {showCreateModal && (
                 <div className="modal show d-block fade-in fast" tabIndex="-1">
                     <div className="modal-dialog modal-lg modal-dialog-centered">
@@ -257,11 +215,9 @@ export default function Censos() {
                                         onClick={() => setShowCreateModal(false)}
                                     ></button>
                                 </div>
-
                                 <div className="modal-body">
                                     <div className="row g-3">
-                                        {/* Nombre */}
-                                        <div className="col-md-6">
+                                        <div className="col-12">
                                             <label className="form-label fw-bold">Nombre</label>
                                             <ValidatedInput
                                                 type="text"
@@ -274,23 +230,6 @@ export default function Censos() {
                                                 }
                                             />
                                         </div>
-
-                                        {/* Población requerida */}
-                                        <div className="col-md-6">
-                                            <label className="form-label fw-bold">Población requerida</label>
-                                            <ValidatedInput
-                                                type="number"
-                                                value={formData.poblaciontotal}
-                                                onChange={(val) => setFormData(prev => ({ ...prev, poblaciontotal: val }))}
-                                                error={
-                                                    submittedCreate && (!formData.poblaciontotal || parseInt(formData.poblaciontotal) <= 0)
-                                                        ? "La población requerida debe ser mayor a 0"
-                                                        : ""
-                                                }
-                                            />
-                                        </div>
-
-                                        {/* Fecha inicio */}
                                         <div className="col-md-6">
                                             <label className="form-label fw-bold">Inicio</label>
                                             <ValidatedInput
@@ -300,18 +239,12 @@ export default function Censos() {
                                                 error={
                                                     submittedCreate && !formData.fechainiciocenso
                                                         ? "Selecciona una fecha de inicio válida"
-                                                        : submittedCreate && (() => {
-                                                            const hoyUTC = new Date();
-                                                            hoyUTC.setUTCHours(0, 0, 0, 0);
-                                                            return new Date(formData.fechainiciocenso + "T00:00:00Z") < hoyUTC;
-                                                        })()
+                                                        : submittedCreate && formData.fechainiciocenso < today
                                                             ? "La fecha de inicio no puede ser anterior a hoy"
                                                             : ""
                                                 }
                                             />
                                         </div>
-
-                                        {/* Fecha fin */}
                                         <div className="col-md-6">
                                             <label className="form-label fw-bold">Fin</label>
                                             <ValidatedInput
@@ -321,7 +254,7 @@ export default function Censos() {
                                                 error={
                                                     submittedCreate && !formData.fechafincenso
                                                         ? "Selecciona una fecha de finalización válida"
-                                                        : submittedCreate && new Date(formData.fechafincenso) < new Date(formData.fechainiciocenso)
+                                                        : submittedCreate && formData.fechafincenso < formData.fechainiciocenso
                                                             ? "La fecha de fin no puede ser anterior a la de inicio"
                                                             : ""
                                                 }
@@ -329,16 +262,16 @@ export default function Censos() {
                                         </div>
                                     </div>
                                 </div>
-
                                 <div className="modal-footer">
                                     <button type="submit" className="btn btn-success hover-lift">
-                                        Crear activo
+                                        <i className="bi bi-check-circle me-2"></i>Crear
                                     </button>
                                     <button
                                         type="button"
                                         className="btn btn-secondary hover-lift"
                                         onClick={() => setShowCreateModal(false)}
                                     >
+                                        <i className="bi bi-x-circle me-2"></i>
                                         Cancelar
                                     </button>
                                 </div>
@@ -347,105 +280,110 @@ export default function Censos() {
                     </div>
                 </div>
             )}
-
-
-            <h3 className="fw-bold">Censos activos</h3>
-            <div className="row mt-3">
-                {censos
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                <div>
+                    <h3 className="fw-bold mb-1">Censos activos</h3>
+                    <p className="text-body-secondary small mb-0">Consulta los períodos y administra los censos registrados.</p>
+                </div>
+                <span className="badge rounded-pill bg-body-tertiary border text-body-secondary fw-semibold px-3 py-2"><i className="bi bi-collection me-2"></i>{censos.length} censos</span>
+            </div>
+            <div className="row g-4">
+                {[...censos]
                     .sort((a, b) => b.id - a.id)
                     .map((censo) => (
-                        <TiltCard className="col-md-4 mb-3" key={censo.id}>
-                            <div className="card h-100">
-                                <div className="card-body">
+                        <TiltCard className="col-12 col-md-6 col-xl-4" key={censo.id}>
+                            <div className="card h-100 border-0 rounded-4 shadow-sm overflow-hidden censo-card">
+                                <div className="censo-accent"></div>
+                                <div className="card-body p-4 d-flex flex-column">
+                                    <div className="d-flex align-items-center justify-content-between gap-2 mb-3">
+                                        <span className="censo-icon d-inline-flex align-items-center justify-content-center rounded-3 bg-primary bg-opacity-10 text-primary fs-4 flex-shrink-0"><i className="bi bi-clipboard2-data"></i></span>
+                                        <span className="badge rounded-pill bg-body-tertiary border text-body-secondary fw-semibold px-3 py-2">Censo #{censo.id}</span>
+                                    </div>
+                                    <h5 className="card-title fw-bold text-body text-break mb-3" title={censo.nombrecenso || "Sin nombre"}>
+                                        {censo.nombrecenso || "Sin nombre"}
+                                    </h5>
                                     {editId === censo.id ? (
                                         <>
-                                            <label className="form-label">Nombre</label>
-                                            <ValidatedInput
-                                                type="text"
-                                                value={editData.nombrecenso}
-                                                onChange={(val) =>
-                                                    setEditData((prev) => ({ ...prev, nombrecenso: val }))
-                                                }
-                                                error={
-                                                    submittedEdit &&
-                                                        (!editData.nombrecenso || editData.nombrecenso.length < 3)
-                                                        ? "El nombre debe tener al menos 3 caracteres"
-                                                        : ""
-                                                }
-                                            />
-
-                                            <label className="form-label">Fecha de fin</label>
-                                            <ValidatedInput
-                                                type="date"
-                                                value={editData.fechafincenso}
-                                                onChange={(val) =>
-                                                    setEditData((prev) => ({ ...prev, fechafincenso: val }))
-                                                }
-                                                error={
-                                                    submittedEdit && !editData.fechafincenso
-                                                        ? "Selecciona una fecha de finalización válida"
-                                                        : submittedEdit &&
-                                                            new Date(editData.fechafincenso) <
-                                                            new Date(editData.fechainiciocenso)
-                                                            ? "La fecha de fin no puede ser anterior a la de inicio"
+                                            <div className="bg-body-tertiary rounded-3 p-3 mb-3">
+                                                <div className="d-flex align-items-center gap-2 mb-3">
+                                                    <i className="bi bi-pencil-square text-primary"></i>
+                                                    <span className="fw-semibold small">Editar período</span>
+                                                </div>
+                                                <label className="form-label small fw-semibold">Fecha de inicio</label>
+                                                <ValidatedInput
+                                                    type="date"
+                                                    value={editData.fechainiciocenso}
+                                                    onChange={(val) => setEditData((prev) => ({ ...prev, fechainiciocenso: val }))}
+                                                    error={
+                                                        submittedEdit && !editData.fechainiciocenso
+                                                            ? "Selecciona una fecha de inicio válida"
                                                             : ""
-                                                }
-                                            />
-
-                                            <button
-                                                className="btn btn-sm btn-success me-2"
-                                                onClick={() => handleEditSave(censo.id)}
-                                            >
-                                                Guardar
-                                            </button>
-                                            <button
-                                                className="btn btn-sm btn-secondary"
-                                                onClick={() => setEditId(null)}
-                                            >
-                                                Cancelar
-                                            </button>
+                                                    }
+                                                />
+                                                <label className="form-label small fw-semibold mt-3">Fecha de fin</label>
+                                                <ValidatedInput
+                                                    type="date"
+                                                    value={editData.fechafincenso}
+                                                    onChange={(val) => setEditData((prev) => ({ ...prev, fechafincenso: val }))}
+                                                    error={
+                                                        submittedEdit && !editData.fechafincenso
+                                                            ? "Selecciona una fecha de finalización válida"
+                                                            : submittedEdit && editData.fechafincenso < editData.fechainiciocenso
+                                                                ? "La fecha de fin no puede ser anterior a la de inicio"
+                                                                : ""
+                                                    }
+                                                />
+                                            </div>
+                                            <div className="d-flex flex-wrap gap-2 mt-auto pt-3 border-top">
+                                                <button className="btn btn-sm btn-primary rounded-3 py-2 fw-semibold flex-fill" disabled={processing} onClick={() => handleEditSave(censo.id)}>
+                                                    <i className="bi bi-check2-circle me-2"></i>Guardar
+                                                </button>
+                                                <button className="btn btn-sm btn-outline-secondary rounded-3 py-2 fw-semibold flex-fill" disabled={processing} onClick={() => { setEditId(null); setSubmittedEdit(false); }}>
+                                                    Cancelar
+                                                </button>
+                                            </div>
                                         </>
                                     ) : (
                                         <>
-                                            <h5 className="card-title color-brand fw-bold">
-                                                {censo.nombrecenso || "Sin nombre"}
-                                            </h5>
-                                            <p className="card-text">
-                                                <strong>Personas encuestadas:</strong>{" "}
-                                                {censo.cantidadencuestados || 0}
-                                                <br />
-                                                <strong>Población total:</strong>{" "}
-                                                {censo.poblaciontotal || 0}
-                                                <br />
-                                                <strong>Inicio:</strong>{" "}
-                                                {new Date(censo.fechainiciocenso).toLocaleDateString()}
-                                                <br />
-                                                <strong>Fin:</strong>{" "}
-                                                {new Date(censo.fechafincenso).toLocaleDateString()}
-                                            </p>
-                                            <button
-                                                className="btn btn-sm btn-outline-primary me-2"
-                                                onClick={() => handleEditClick(censo)}
-                                            >
-                                                Editar
-                                            </button>
-                                            <button
-                                                className="btn btn-sm btn-outline-danger"
-                                                onClick={() => {
-                                                    setDeleteId(censo.id);
-                                                    setShowConfirm(true);
-                                                }}
-                                            >
-                                                Desactivar
-                                            </button>
+                                            <div className="d-grid gap-2 mb-3">
+                                                <div className="d-flex align-items-center gap-3 p-3 bg-body-tertiary border rounded-3">
+                                                    <span className="censo-date-icon d-inline-flex align-items-center justify-content-center rounded-3 bg-primary bg-opacity-10 text-primary flex-shrink-0"><i className="bi bi-calendar-event"></i></span>
+                                                    <div>
+                                                        <div className="small text-body-secondary">Fecha de inicio</div>
+                                                        <div className="fw-bold text-body">{fechaLegible(censo.fechainiciocenso)}</div>
+                                                    </div>
+                                                </div>
+                                                <div className="d-flex align-items-center gap-3 p-3 bg-body-tertiary border rounded-3">
+                                                    <span className="censo-date-icon d-inline-flex align-items-center justify-content-center rounded-3 bg-primary bg-opacity-10 text-primary flex-shrink-0"><i className="bi bi-calendar-check"></i></span>
+                                                    <div>
+                                                        <div className="small text-body-secondary">Fecha de finalización</div>
+                                                        <div className="fw-bold text-body">{fechaLegible(censo.fechafincenso)}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="d-flex flex-wrap gap-2 mt-auto pt-3 border-top">
+                                                <button className="btn btn-sm btn-outline-primary rounded-3 py-2 fw-semibold flex-fill" disabled={processing} onClick={() => handleEditClick(censo)}>
+                                                    <i className="bi bi-pencil-square me-2"></i>Editar
+                                                </button>
+                                                <button className="btn btn-sm btn-outline-danger rounded-3 py-2 fw-semibold flex-fill" disabled={processing} onClick={() => { setDeleteId(censo.id); setShowConfirm(true); }}>
+                                                    <i className="bi bi-slash-circle me-2"></i>Desactivar
+                                                </button>
+                                            </div>
                                         </>
                                     )}
                                 </div>
                             </div>
                         </TiltCard>
                     ))}
+                {censos.length === 0 && (
+                    <div className="col-12">
+                        <div className="text-center py-5 border rounded-4 text-body-secondary">
+                            <i className="bi bi-inbox fs-2 d-block mb-2"></i>
+                            Todavía no hay censos para mostrar.
+                        </div>
+                    </div>
+                )}
             </div>
-
         </div>
     );
 }
