@@ -4,7 +4,7 @@ import {
     createEvento,
     patchEvento,
     deleteEvento,
-    getAreasConocimientos
+    getCategoriasEventos
 } from "../../services";
 import EditableTable from "../../components/EditableTable/EditableTable";
 import ToastMessage from "../../components/ToastMessage/ToastMessage";
@@ -17,28 +17,38 @@ export default function EventosSection() {
     const [processing, setProcessing] = useState(false);
 
     const cargarDatos = () => {
-        Promise.all([getEventos(), getAreasConocimientos()])
+        Promise.all([getEventos(), getCategoriasEventos()])
             .then(([resEventos, resCategorias]) => {
-                const datosEventos = Array.isArray(resEventos?.data)
-                    ? resEventos.data.filter(e => e.estado)
-                    : [];
-                const ordenadosEventos = datosEventos.sort((a, b) => b.id - a.id);
+                const obtenerDatos = (res) => {
+                    if (Array.isArray(res?.data?.data)) return res.data.data;
+                    if (Array.isArray(res?.data)) return res.data;
+                    return [];
+                };
 
-                const datosCategorias = Array.isArray(resCategorias?.data)
-                    ? resCategorias.data.filter(c => c.estado)
-                    : [];
+                const datosEventos = obtenerDatos(resEventos)
+                    .filter(e => e.estado !== false)
+                    .sort((a, b) => b.id - a.id);
+
+                const datosCategorias = obtenerDatos(resCategorias)
+                    .filter(c => c.estado !== false);
+
                 setCategorias(datosCategorias);
 
-                // Mapear categoriaid -> nombre
-                const eventosConNombre = ordenadosEventos.map(e => {
-                    const categoria = datosCategorias.find(c => c.id === e.categoriaid);
+                const eventosConNombre = datosEventos.map(e => {
+                    const categoria = datosCategorias.find(
+                        c => String(c.id) === String(e.categoriaid)
+                    );
+
                     return {
                         ...e,
-                        categoriaNombre: categoria ? categoria.areaconocimiento : "Sin categoría"
+                        categoriaNombre: categoria?.categoria || "Sin categoría"
                     };
                 });
 
                 setEventos(eventosConNombre);
+            })
+            .catch(error => {
+                console.error("Error al cargar eventos:", error);
             })
             .finally(() => setLoading(false));
     };
@@ -48,17 +58,21 @@ export default function EventosSection() {
     }, []);
 
     const columns = [
-        { key: "evento", label: "Evento", rules: { required: true, minLength: 3, maxLength: 30 } },
+        {
+            key: "evento",
+            label: "Evento",
+            rules: { required: true, minLength: 3, maxLength: 30 }
+        },
         {
             key: "categoriaid",
             label: "Categoría",
             type: "select",
-            options: categorias.map(c => ({ value: c.id, label: c.areaconocimiento })),
+            options: categorias.map(c => ({
+                value: c.id,
+                label: c.categoria
+            })),
             rules: { required: true },
-            render: (row) => {
-                const cat = categorias.find(c => c.id === row.categoriaid);
-                return cat ? cat.areaconocimiento : "Sin asignar";
-            }
+            render: (row) => row.categoriaNombre || "Sin categoría"
         }
     ];
 

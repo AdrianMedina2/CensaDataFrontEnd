@@ -13,10 +13,19 @@ const TEMA = {
     tooltip: { container: { background: "#fff", color: "#212529", borderRadius: 8, boxShadow: "0 6px 24px rgba(0,0,0,.12)" } },
     labels: { text: { fontSize: 11, fontWeight: 600 } }
 };
-const formatTitulo = (nombre) => String(nombre).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+const formatTitulo = (nombre) => {
+    if (nombre === "estudiantes_por_area") return "Estudiantes Por Área de Conocimiento";
+    if (nombre === "encuestados_por_sexo") return "Encuestados Por Género";
+    if (nombre === "encuestados_por_grupo_edad") return "Encuestados Por Grupo De Edad";
+    return String(nombre).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+};
 const formatearNumero = valor => new Intl.NumberFormat("es-NI", { maximumFractionDigits: 2 }).format(Number(valor) || 0);
 const etiquetaDe = (item, nombre, indice) => {
     if (nombre === "evolucion_mensual_encuestados" || (item.mes != null && item.anio != null)) return `${item.mes}/${item.anio}`;
+    if (nombre === "encuestados_por_sexo") {
+        if (item.categoria === "F") return "Femeninos";
+        if (item.categoria === "M") return "Masculinos";
+    }
     return String(item.categoria ?? item.nombre ?? item.label ?? `Categoría ${indice + 1}`);
 };
 const tipoRecomendado = nombre => {
@@ -37,14 +46,14 @@ function GraficoNivo({ nombre, grafico, tipo }) {
     }));
     const muchosDatos = datos.length > 7;
     const barrasHorizontales = datos.some(d => d.id.length > 15) || muchosDatos;
-    const altura = tipo === "bar" && barrasHorizontales
-        ? Math.max(300, datos.length * 39 + 75)
-        : tipo === "pie" ? 330 : 320;
     const comun = { theme: TEMA, animate: true, motionConfig: "gentle" };
 
     return (
         <div className="dashboard-grafico-contenedor">
-            <div className="dashboard-grafico" style={{ height: altura }}>
+            <div
+                className={`dashboard-grafico${tipo === "pie" ? " dashboard-grafico--pie" : tipo === "bar" && barrasHorizontales ? " dashboard-grafico--barras-horizontales" : ""}`}
+                data-cantidad={datos.length}
+            >
             {tipo === "bar" && (
                 <ResponsiveBar
                     {...comun}
@@ -134,9 +143,9 @@ function GraficoNivo({ nombre, grafico, tipo }) {
             {tipo === "pie" && (
                 <div className="dashboard-leyenda-externa d-flex flex-wrap justify-content-center gap-3 px-3 pt-2 pb-3">
                     {datos.filter(d => d.valor > 0).map((d, i) => (
-                        <div key={`${d.id}-${i}`} title={d.id} className="d-flex align-items-center gap-2 text-secondary small" style={{ minWidth: 0, maxWidth: "100%" }}>
-                            <span style={{ width: 12, height: 12, flexShrink: 0, borderRadius: "50%", backgroundColor: d.color }} />
-                            <span style={{ overflowWrap: "anywhere" }}>{d.id}</span>
+                        <div key={`${d.id}-${i}`} title={d.id} className="d-flex align-items-center gap-2 text-secondary small dashboard-leyenda-item">
+                            <span className={`dashboard-leyenda-color dashboard-leyenda-color-${COLORES.indexOf(d.color)}`} />
+                            <span>{d.id}</span>
                         </div>
                     ))}
                 </div>
@@ -179,7 +188,7 @@ export default function Dashboard() {
         <div className="container-fluid dashboard-nivo">
             <h2 className="fw-bold mt-2 mb-4">📊 Dashboard de Estadísticas</h2>
             <div className="mb-4 d-flex flex-wrap align-items-center gap-3">
-                <div className="input-group" style={{ maxWidth: "500px" }}>
+                <div className="input-group dashboard-filtro-fechas">
                     <input type="date" value={desde} onChange={e => setDesde(e.target.value)} className="form-control" aria-label="Fecha desde" />
                     <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} className="form-control" aria-label="Fecha hasta" />
                     <button type="button" onClick={fetchData} className="btn btn-brand" disabled={loading}>Filtrar</button>
@@ -194,10 +203,10 @@ export default function Dashboard() {
                 </div>
             )}
             <div className="d-flex flex-wrap gap-3 mb-4">
-                {Object.values(kpis).map((kpi, idx) => (
-                    <div key={idx} className="card text-center shadow-sm border-0 bg-light dashboard-kpi" style={{ flex: "1 1 180px", minWidth: "180px" }}>
+                {Object.entries(kpis).filter(([clave]) => clave !== "encuestados").map(([clave, kpi]) => (
+                    <div key={clave} className="card text-center shadow-sm border-0 bg-light dashboard-kpi">
                         <div className="card-body">
-                            <h6 className="text-muted">{kpi.titulo}</h6>
+                            <h6 className="text-muted">{clave === "participantes" ? "Participantes en Eventos" : kpi.titulo}</h6>
                             <h3 className="fw-bold">{kpi.titulo === "Edad promedio" ? Math.round(kpi.valor_actual) : kpi.valor_actual}</h3>
                             <p className="mb-1"><small className="text-muted">Anterior: {kpi.titulo === "Edad promedio" ? Math.round(kpi.valor_anterior) : kpi.valor_anterior}</small></p>
                             {kpi.titulo !== "Edad promedio" && (

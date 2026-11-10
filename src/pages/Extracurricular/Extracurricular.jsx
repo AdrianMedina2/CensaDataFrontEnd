@@ -5,9 +5,9 @@ import CategoriasSection from "./CategoriasSection";
 
 export default function Extracurricular() {
     const sections = [
+        { key: "categorias", label: "Categorías de Eventos", component: CategoriasSection },
         { key: "eventos", label: "Eventos", component: EventosSection },
         { key: "actividades", label: "Actividades", component: ActividadesSection },
-        { key: "categorias", label: "Categorías de Eventos", component: CategoriasSection },
     ];
 
     return <SectionLayout title="📋 Extracurricular" sections={sections} />;

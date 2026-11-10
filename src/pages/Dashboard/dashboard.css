@@ -1,4 +1,4 @@
-/* Estilos mínimos: estructura masonry y dimensiones de Nivo. */
+/** Estilos mínimos: estructura masonry y dimensiones de Nivo. */
 .overlay-loading {
     position: fixed;
     inset: 0;
@@ -29,16 +29,21 @@
     background-color: var(--bs-white, #fff);
     cursor: pointer;
 }
-/* Al pasar el mouse, texto negro sobre fondo claro. */
+/** Al pasar el mouse, texto negro sobre fondo claro. */
 .dashboard-tipo-selector:hover,
 .dashboard-tipo-selector:focus {
     color: #212529;
     background-color: var(--bs-light, #f8f9fa);
     border-color: var(--bs-primary, #3155d9);
 }
-/* El menú desplegable nativo conserva colores legibles. */
+/** El menú desplegable nativo conserva colores legibles. */
 .dashboard-tipo-selector option { color: #344054; background: #fff; }
-.dashboard-grafico { width: 100%; min-width: 0; }
+.dashboard-grafico { width: 100%; min-width: 0; height: 320px; }
+.dashboard-grafico--pie { height: 330px; }
+.dashboard-grafico--barras-horizontales {
+    height: 300px;
+    height: max(300px, calc(75px + 39px * attr(data-cantidad type(<number>), 0)));
+}
 .dashboard-sin-datos { min-height: 180px; }
 .dashboard-tooltip {
     display: flex;
@@ -50,6 +55,20 @@
 }
 .dashboard-tooltip strong { font-weight: 600; }
 .dashboard-leyenda-externa span:last-child { overflow-wrap: anywhere; }
+.dashboard-leyenda-item { min-width: 0; max-width: 100%; }
+.dashboard-leyenda-color { width: 12px; height: 12px; flex-shrink: 0; border-radius: 50%; }
+.dashboard-leyenda-color-0 { background-color: #3155D9; }
+.dashboard-leyenda-color-1 { background-color: #F36B86; }
+.dashboard-leyenda-color-2 { background-color: #F5B84B; }
+.dashboard-leyenda-color-3 { background-color: #29A6A1; }
+.dashboard-leyenda-color-4 { background-color: #9473DB; }
+.dashboard-leyenda-color-5 { background-color: #EF8E4D; }
+.dashboard-leyenda-color-6 { background-color: #49A2E8; }
+.dashboard-leyenda-color-7 { background-color: #7D8BA5; }
+.dashboard-leyenda-color-8 { background-color: #39A46B; }
+.dashboard-leyenda-color-9 { background-color: #C76FC8; }
+.dashboard-filtro-fechas { max-width: 500px; }
+.dashboard-kpi { flex: 1 1 180px; min-width: 180px; }
 @media (max-width: 991.98px) {
     .dashboard-grid-graficos { columns: 1; }
 }
