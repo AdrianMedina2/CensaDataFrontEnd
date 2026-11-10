@@ -35,13 +35,26 @@ export default function CarrerasSection() {
     }, []);
 
     const columns = [
-        { key: "carrera", label: "Carrera", rules: { required: true, minLength: 3, maxLength: 30 } },
+        {
+            key: "carrera",
+            label: "Carrera",
+            rules: { required: true, minLength: 3, maxLength: 30 }
+        },
         {
             key: "areaconocimientoid",
             label: "Área de Conocimiento",
             type: "select",
-            options: areas.map(a => ({ value: a.id, label: a.areaconocimiento })),
-            rules: { required: true }
+            options: areas.map(a => ({
+                value: a.id,
+                label: a.areaconocimiento
+            })),
+            rules: { required: true },
+            render: (row) => {
+                const area = areas.find(
+                    a => String(a.id) === String(row.areaconocimientoid)
+                );
+                return area?.areaconocimiento || "Sin área";
+            }
         }
     ];
 
