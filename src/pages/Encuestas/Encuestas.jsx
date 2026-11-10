@@ -453,9 +453,9 @@ export default function EncuestaForm() {
         return {
             Casa: {
                 numcasa: Number(Casa.numcasa),
-                serviciodeagua: 1,
-                serviciodeenergia: 1,
-                infraestructuraid: 1
+                serviciodeagua: 0,
+                serviciodeenergia: 0,
+                infraestructuraid: 0
             },
             encuestarecidente: {
                 respuesta: "POSITIVA",
